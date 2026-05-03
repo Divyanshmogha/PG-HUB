@@ -1,0 +1,26 @@
+{
+  "name": "PGHub - PG Manager",
+  "short_name": "PGHub",
+  "description": "Manage your PG — tenants, rent, electricity and expenses",
+  "start_url": "/pg-hub/",
+  "scope": "/pg-hub/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e0f13",
+  "theme_color": "#16181f",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "utilities"]
+}
