@@ -1818,7 +1818,7 @@ function renderOverview() {
 }
 
 function updateHeaderStats() {
-  const pgTenants = tenants.filter(t => !getRoomById(t.roomId)?.isFamily);
+  const pgTenants = tenants.filter(t => !t.archivedAt && !getRoomById(t.roomId)?.isFamily);
   const total = pgTenants.length;
   const totalBeds = FLOORS.reduce((a, f) => a + f.rooms.filter(r=>!r.isFamily).reduce((b, r) => b + r.capacity, 0), 0);
   const nowKey = monthKey(new Date().getFullYear(), new Date().getMonth());
