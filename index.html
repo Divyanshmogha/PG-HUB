@@ -80,7 +80,7 @@
 
     let _appBooted = false; window._appBooted = false; Object.defineProperty(window, '_appBooted', { get: () => _appBooted, set: v => { _appBooted = v; } });
     onAuthStateChanged(auth, user => {
-      console.log('[PGHub] authStateChanged, user=', user ? user.email : 'none');
+      console.log('[PGHub] authStateChanged, user=', user ? 'authenticated' : 'none');
       if (user) {
         _appBooted = true;
         document.getElementById('login-screen').style.display = 'none';
@@ -769,7 +769,7 @@
 
       <div style="margin-bottom:14px">
         <label style="display:block;font-family:'DM Mono',monospace;font-size:0.68rem;color:#9ba3b8;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Email</label>
-        <input id="login-email" type="email" value="divyanshmogha9198@gmail.com"
+        <input id="login-email" type="email" placeholder="your email"
           style="width:100%;background:#1e2029;border:1px solid #2a2d3a;border-radius:8px;padding:12px;color:#e8eaf0;font-family:'DM Mono',monospace;font-size:0.82rem;outline:none"
           onfocus="this.style.borderColor='#f5c842'" onblur="this.style.borderColor='#2a2d3a'"
           onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
