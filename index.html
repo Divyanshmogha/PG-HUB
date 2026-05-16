@@ -70,10 +70,6 @@
     try { await deleteObject(sRef(storage, path)); } catch(e) { /* ignore if not found */ }
   };
 
-  window._fbListen = (path, cb) => onValue(ref(db, path), snap => {
-    cb(snap.exists() ? snap.val() : null);
-  });
-
   // ── Bootstrap: check auth state first, then load data ────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fb-loading').style.display = 'flex';
@@ -1118,7 +1114,10 @@
   }
 </style>
 <!-- SheetJS for .xlsx exports -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.1/xlsx.full.min.js"></script>
+<!-- Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com https://*.firebasestorage.app https://generativelanguage.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https://*.firebasestorage.app https://*.googleapis.com; media-src 'self' blob:;">
+<!-- SheetJS for .xlsx exports (with SRI) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.1/xlsx.full.min.js" integrity="sha384-rRoXxn2yHlrZYB587Ki9RO1tONhLdM6XfORg7Rw4uwH4/Fh/5nP7IUX91bkaKUgs" crossorigin="anonymous"></script>
 <style id="ui-theme-and-flair">
   /* === Theme + creative flair (v14.3) === */
 
@@ -1654,15 +1653,17 @@
   <!-- ELECTRICITY -->
   <div class="section" id="sec-electricity">
     <!-- Rate editor bar -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <span style="font-size:0.72rem;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase">⚡ Rate per Unit</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:var(--text2)">₹</span>
         <input id="rate-input" type="number" min="1" step="0.5" value="13" class="form-input" style="width:90px;padding:6px 10px;font-size:0.9rem" oninput="updateRate()">
         <span style="font-size:0.72rem;color:var(--muted)">/unit</span>
       </div>
-      <span style="font-size:0.72rem;color:var(--muted)">Change this to update all floor billing calculations instantly</span>
+      <span style="font-size:0.72rem;color:var(--muted)">Changing rate will ask you which month it applies from</span>
     </div>
+    <!-- Rate change history -->
+    <div id="rate-history-strip" style="margin-bottom:20px"></div>
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
         <div class="kpi-label">Current Rate</div>
@@ -2214,7 +2215,7 @@ const FLOORS = [
   {
     id: 0, name: 'Ground Floor', isGroundFloor: true,
     rooms: [
-      { id: 'GF01', name: 'Family', isFamily: true, capacity: 1, washroom: 'attached', balcony: true, defaultRent: 0,
+      { id: 'GF01', name: 'Ground Floor', capacity: 1, washroom: 'attached', balcony: true, defaultRent: 0,
         description: 'Ground Floor Family Residence' }
     ]
   },
@@ -2389,34 +2390,45 @@ function renderOverview() {
       const ts = tenantsInRoom(room.id);
       const card = document.createElement('div');
 
-      // ── Ground Floor Family Card (special) ─────────────────────────────────
-      if (room.isFamily) {
-        const roomExps = getRoomExpenses(room.id);
-        const expTotal = roomExps.reduce((a,e) => a + Number(e.amount), 0);
-        card.className = 'room-card occupied';
+      // ── Ground Floor Card (regular room + Motor/Gas buttons) ──────────────
+      if (floor.isGroundFloor) {
+        const isFull = ts.length >= room.capacity;
+        const isEmpty = ts.length === 0;
+        const statusClass = isFull ? 'occupied' : (isEmpty ? 'vacant' : 'partial');
+        card.className = `room-card ${statusClass}`;
+        card.style.cursor = 'pointer';
+        card.onclick = () => openRoomDetail(room.id, floor.id);
+
+        const gfTenantsHtml = ts.map(t => `
+          <div class="tenant-chip" onclick="event.stopPropagation();openEditModal('${t.id}')" style="cursor:pointer">
+            <div class="tenant-avatar" style="background:${colorForTenant(t.id)}22;color:${colorForTenant(t.id)}">${initials(t.name)}</div>
+            <div class="tenant-info">
+              <div class="tenant-name">${escapeHtml(t.name)}</div>
+              <div class="tenant-rent">${fmt(t.rent)}/mo · ${escapeHtml(t.phone||'—')}</div>
+            </div>
+            <span class="rent-status ${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'paid':'due';})()}">${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'Paid':s==='overdue'?'⚠':'Due';})()}</span>
+          </div>`).join('');
+
+        const gfAddBtn = ts.length < room.capacity
+          ? `<button class="add-tenant-btn" onclick="event.stopPropagation();openAddTenantModal('${room.id}', ${floor.id})">＋ Add Tenant</button>`
+          : '';
+
         card.innerHTML = `
-          <div class="room-header">
-            <div class="room-number">🏠 GF Family</div>
+          <div class="room-header" style="display:flex;justify-content:space-between;align-items:center">
+            <div class="room-number">🏠 Ground Floor</div>
             <div style="display:flex;gap:5px;flex-wrap:wrap">
               <span class="room-tag attached">🚿 Attached</span>
               <span class="room-tag" style="background:rgba(61,220,132,0.12);color:#3ddc84">🌿 Balcony</span>
             </div>
           </div>
-          <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px;font-size:0.72rem;color:var(--text2)">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-              <div>⚡ <span style="color:var(--text)">Own Meter</span></div>
-              <div>💧 <span style="color:var(--text)">50/50 Motor</span></div>
-              <div>🔥 <span style="color:var(--text)">PNG Gas</span></div>
-              <div>💰 <span style="color:var(--text)">Fixed Rent</span></div>
-            </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:0.68rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap">
+            <span>⚡ Own Meter</span><span>💧 50/50 Motor</span><span>🔥 PNG Gas</span>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${gfTenantsHtml}
+          ${gfAddBtn}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px" onclick="event.stopPropagation()">
             <button class="action-btn" onclick="openMotorModal()" style="flex:1;padding:8px;font-size:0.7rem">💧 Motor</button>
             <button class="action-btn" onclick="openGasModal()" style="flex:1;padding:8px;font-size:0.7rem">🔥 Gas</button>
-          </div>
-          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:0.7rem;color:var(--muted)">Misc expenses: ${fmt(expTotal)}</span>
-            <button class="action-btn" onclick="openRoomExpenseModal('${room.id}')" style="font-size:0.68rem;padding:5px 10px">+ Expense</button>
           </div>`;
         grid.appendChild(card);
         return;
@@ -2432,8 +2444,8 @@ function renderOverview() {
         <div class="tenant-chip" onclick="openEditModal('${t.id}')" style="cursor:pointer">
           <div class="tenant-avatar" style="background:${colorForTenant(t.id)}22;color:${colorForTenant(t.id)}">${initials(t.name)}</div>
           <div class="tenant-info">
-            <div class="tenant-name">${t.name}</div>
-            <div class="tenant-rent">${fmt(t.rent)}/mo · ${t.phone||'—'}</div>
+            <div class="tenant-name">${escapeHtml(t.name)}</div>
+            <div class="tenant-rent">${fmt(t.rent)}/mo · ${escapeHtml(t.phone||'—')}</div>
           </div>
           <span class="rent-status ${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'paid':'due';})()}">${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'Paid':s==='overdue'?'⚠':'Due';})()}</span>
         </div>`).join('');
@@ -2479,7 +2491,7 @@ function renderOverview() {
     });
 
     // Common washroom card — only for floors that have common washrooms
-    const commonRooms = floor.rooms.filter(r => r.washroom === 'common' && !r.isFamily);
+    const commonRooms = floor.rooms.filter(r => r.washroom === 'common');
     if (commonRooms.length > 0) {
       const wCard = document.createElement('div');
       wCard.className = 'washroom-card';
@@ -2497,9 +2509,9 @@ function renderOverview() {
 }
 
 function updateHeaderStats() {
-  const pgTenants = tenants.filter(t => !t.archivedAt && !getRoomById(t.roomId)?.isFamily);
+  const pgTenants = tenants.filter(t => !t.archivedAt);
   const total = pgTenants.length;
-  const totalBeds = FLOORS.reduce((a, f) => a + f.rooms.filter(r=>!r.isFamily).reduce((b, r) => b + r.capacity, 0), 0);
+  const totalBeds = FLOORS.reduce((a, f) => a + f.rooms.reduce((b, r) => b + r.capacity, 0), 0);
   const nowKey = monthKey(new Date().getFullYear(), new Date().getMonth());
   const due = pgTenants.filter(t => { const r = getRentRecord(t, nowKey); return !r || !r.paid; }).reduce((a, t) => a + Number(t.rent || 0), 0);
   document.getElementById('h-total').textContent = total;
@@ -2663,7 +2675,7 @@ function renderFinance() {
   const banner = document.getElementById('f-overdue-banner');
   if (overdueThisMonth.length) {
     banner.style.display = 'block';
-    banner.innerHTML = `⚠ <strong>${overdueThisMonth.length} tenant${overdueThisMonth.length > 1 ? 's' : ''}</strong> overdue for ${monthLabel(now.getFullYear(), now.getMonth())}: ${overdueThisMonth.map(t => t.name.split(' ')[0]).join(', ')}`;
+    banner.innerHTML = `⚠ <strong>${overdueThisMonth.length} tenant${overdueThisMonth.length > 1 ? 's' : ''}</strong> overdue for ${monthLabel(now.getFullYear(), now.getMonth())}: ${overdueThisMonth.map(t => escapeHtml(t.name.split(' ')[0])).join(', ')}`;
   } else {
     banner.style.display = 'none';
   }
@@ -2679,7 +2691,7 @@ function renderFinance() {
     const unpaid = totalUnpaid(t);
     return `<tr style="cursor:pointer" onclick="openRentHistory('${t.id}')">
       <td>
-        <div style="font-size:0.8rem;color:var(--text)">${t.name}</div>
+        <div style="font-size:0.8rem;color:var(--text)">${escapeHtml(t.name)}</div>
         ${unpaid > 0 ? `<div style="font-size:0.65rem;color:var(--red);margin-top:2px">Total due: ${fmt(unpaid)}</div>` : ''}
       </td>
       <td>Room ${room?.name || '?'}</td>
@@ -2807,7 +2819,7 @@ function openRentHistory(tenantId) {
           <div style="flex:1;font-size:0.75rem;color:var(--text2)">
             <span style="color:var(--green);font-weight:600">${fmt(rec.amount)}</span>
             · ${rec.date} · <span style="color:var(--blue)">${rec.mode}</span>
-            ${rec.note ? `· <span style="color:var(--text2)">${rec.note}</span>` : ''}
+            ${rec.note ? `· <span style="color:var(--text2)">${escapeHtml(rec.note||"")}</span>` : ''}
           </div>
           <button class="action-btn del" onclick="unmarkRentPaid('${t.id}','${key}');openRentHistory('${t.id}')">Undo</button>
         ` : `
@@ -2933,9 +2945,6 @@ function updateRoomOptions(selectedRoomId) {
   const select = document.getElementById('f-room');
   select.innerHTML = floor.rooms.map(r => {
     const ts = tenantsInRoom(r.id);
-    if (r.isFamily) {
-      return `<option value="${r.id}" ${r.id === selectedRoomId ? 'selected' : ''}>GF Family Residence (Fixed)</option>`;
-    }
     const full = editingId ? (ts.filter(t=>t.id!==editingId).length >= r.capacity) : (ts.length >= r.capacity);
     const features = [r.washroom==='attached'?'Attached WR':'Common WR', r.balcony?'Balcony':''].filter(Boolean).join(', ');
     const label = `Room ${r.name} (${features}) — ₹${r.defaultRent}/head — ${full ? 'Full' : ts.length+'/'+r.capacity}`;
@@ -3027,7 +3036,7 @@ async function saveTenant() {
   if (!roomId)            { alert('Please select a room.'); return; }
 
   const room = getRoomById(roomId);
-  if (!room?.isFamily) {
+  {
     const existing = tenantsInRoom(roomId).filter(t => t.id !== editingId);
     if (existing.length >= room.capacity) { alert('This room is already full.'); return; }
   }
@@ -3228,38 +3237,31 @@ function updateRate() {
     document.getElementById('rate-input').value = rate;
     return;
   }
-
-  // No change, do nothing
   if (newRate === rate) return;
 
-  // Ask user from which month the new rate applies
   const now = new Date();
-  const currentMonthYear = now.toISOString().slice(0, 7); // YYYY-MM
+  const currentMonthYear = now.toISOString().slice(0, 7);
   const promptMsg = `Change rate from ₹${rate} to ₹${newRate} per unit.\n\n` +
     `Effective from which month? Enter as YYYY-MM (e.g. ${currentMonthYear}).\n` +
     `Leave blank to apply from this month.`;
 
   let effectiveMonth = prompt(promptMsg, currentMonthYear);
   if (effectiveMonth === null) {
-    // User cancelled
     document.getElementById('rate-input').value = rate;
     return;
   }
   effectiveMonth = effectiveMonth.trim() || currentMonthYear;
 
-  // Validate format YYYY-MM
   if (!/^\d{4}-\d{2}$/.test(effectiveMonth)) {
     showToast('⚠ Invalid format. Use YYYY-MM (e.g. 2026-05)', 'error');
     document.getElementById('rate-input').value = rate;
     return;
   }
 
-  // Update global rate
   const previousRate = rate;
   rate = newRate;
   document.getElementById('e-rate-display').textContent = '₹' + newRate + '/unit';
 
-  // Append to rate history
   if (!Array.isArray(meterReadings.__rateHistory)) meterReadings.__rateHistory = [];
   meterReadings.__rateHistory.push({
     rate: newRate,
@@ -3272,6 +3274,30 @@ function updateRate() {
   saveMeter();
   renderMeterCards();
   showToast(`✓ Rate changed to ₹${newRate}/unit, effective from ${effectiveMonth}`, 'success');
+}
+
+// Rate history display
+function renderRateHistory() {
+  const strip = document.getElementById('rate-history-strip');
+  if (!strip) return;
+  const history = meterReadings.__rateHistory || [];
+  if (history.length === 0) {
+    strip.innerHTML = '';
+    return;
+  }
+  const sorted = history.slice().sort((a, b) => (a.effectiveFrom || '').localeCompare(b.effectiveFrom || ''));
+  strip.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:0.72rem">
+      <div style="color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px;font-size:0.65rem">📈 Rate Change History</div>
+      ${sorted.map((h, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:4px 0;${i < sorted.length-1 ? 'border-bottom:1px solid var(--border)' : ''}">
+          <span style="color:var(--accent);font-weight:700;min-width:70px">₹${h.rate}/unit</span>
+          <span style="color:var(--text2)">from ${h.effectiveFrom}</span>
+          ${h.previousRate ? `<span style="color:var(--muted)">was ₹${h.previousRate}</span>` : ''}
+          <span style="color:var(--muted);margin-left:auto;font-size:0.62rem">${h.changedAt ? new Date(h.changedAt).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : ''}</span>
+        </div>
+      `).join('')}
+    </div>`;
 }
 
 // Look up the rate that was effective for a given date (YYYY-MM-DD or YYYY-MM)
@@ -3356,6 +3382,7 @@ function renderMeterCards() {
   if (rateInput) rateInput.value = rate;
   const rateDisplay = document.getElementById('e-rate-display');
   if (rateDisplay) rateDisplay.textContent = '₹' + rate + '/unit';
+  renderRateHistory();
 
   const container = document.getElementById('meter-cards');
   container.innerHTML = '';
@@ -3551,7 +3578,7 @@ function renderMeterCards() {
         <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:0.72rem">
           <div style="display:flex;align-items:center;gap:6px">
             <div style="width:20px;height:20px;border-radius:50%;background:${colorForTenant(t.id)}22;color:${colorForTenant(t.id)};display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:700">${initials(t.name)}</div>
-            <span>${t.name}</span>
+            <span>${escapeHtml(t.name)}</span>
           </div>
           <span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700">${lastEntry ? fmt(Math.round(rd.perTenantBill)) : '—'}</span>
         </div>`).join('')
@@ -4130,10 +4157,10 @@ function renderExpensesTable() {
     const color = EX_COLORS[e.category] || '#9ba3b8';
     return `<tr>
       <td style="white-space:nowrap">${e.date}</td>
-      <td style="color:var(--text)">${e.description}</td>
+      <td style="color:var(--text)">${escapeHtml(e.description||"")}</td>
       <td><span class="badge" style="background:${color}22;color:${color}">${e.category}</span></td>
       <td style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700">${fmt(e.amount)}</td>
-      <td style="color:var(--muted);font-size:0.72rem">${e.note||'—'}</td>
+      <td style="color:var(--muted);font-size:0.72rem">${escapeHtml(e.note||'—')}</td>
       <td>
         <button class="action-btn" onclick="openExpenseModal('${e.id}')">Edit</button>
         <button class="action-btn del" onclick="removeExpense('${e.id}')">✕</button>
@@ -4397,7 +4424,7 @@ function renderPnL() {
   tenants.forEach(t => {
     Object.entries(t.rentHistory || {}).forEach(([key, rec]) => {
       if (!rec || !rec.paid) return;
-      txns.push({ date: rec.date || key, desc: `Rent — ${t.name} (${key})`, cat: 'Rent', type: 'income', amount: Number(rec.amount || t.rent || 0) });
+      txns.push({ date: rec.date || key, desc: `Rent — ${escapeHtml(t.name)} (${key})`, cat: 'Rent', type: 'income', amount: Number(rec.amount || t.rent || 0) });
     });
   });
 
@@ -4410,8 +4437,8 @@ function renderPnL() {
   Object.entries(roomExpenses).forEach(([roomId, exps]) => {
     (exps || []).filter(Boolean).forEach(e => {
       const room = getRoomById(roomId);
-      const label = room?.isFamily ? 'GF Family' : `Room ${room?.name||'?'}`;
-      txns.push({ date: e.date, desc: `${label}: ${e.description}`, cat: 'Room Misc', type: 'outgoing', amount: Number(e.amount||0) });
+      const label = `Room ${escapeHtml(room?.name||'?')}`;
+      txns.push({ date: e.date, desc: `${label}: ${escapeHtml(e.description||"")}`, cat: 'Room Misc', type: 'outgoing', amount: Number(e.amount||0) });
     });
   });
 
@@ -4625,8 +4652,8 @@ function openRoomDetail(roomId) {
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <div class="tenant-avatar" style="background:${colorForTenant(t.id)}22;color:${colorForTenant(t.id)};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0">${initials(t.name)}</div>
           <div style="flex:1">
-            <div style="font-weight:600;color:var(--text)">${t.name}</div>
-            <div style="font-size:0.7rem;color:var(--text2)">${t.phone||'—'} · Joined ${t.joinDate||'?'}</div>
+            <div style="font-weight:600;color:var(--text)">${escapeHtml(t.name)}</div>
+            <div style="font-size:0.7rem;color:var(--text2)">${escapeHtml(t.phone||'—')} · Joined ${escapeHtml(t.joinDate||'?')}</div>
           </div>
           <span class="badge ${badgeClass}" style="font-size:0.68rem">${st==='paid'?'✓ Paid':st==='overdue'?'⚠ Overdue':'Due'}</span>
         </div>
@@ -4680,7 +4707,7 @@ function openRoomDetail(roomId) {
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
           <div style="width:30px;height:30px;border-radius:50%;background:#5a5f7222;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--muted);flex-shrink:0">${initials(t.name)}</div>
           <div style="flex:1">
-            <div style="font-weight:600;color:var(--text2)">${t.name}</div>
+            <div style="font-weight:600;color:var(--text2)">${escapeHtml(t.name)}</div>
             <div style="font-size:0.68rem;color:var(--muted)">${t.joinDate||'?'} → ${t.archivedAt||'?'} · ${stayMonths}</div>
           </div>
           <span style="font-size:0.62rem;background:rgba(90,141,238,0.12);color:var(--blue);padding:2px 8px;border-radius:10px">Archived</span>
@@ -5130,7 +5157,7 @@ function showReceiptModal(tenantId, key) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:16px">
       <div><span style="color:var(--text2)">Receipt No</span><br><strong style="color:var(--text)">${receiptNo}</strong></div>
       <div><span style="color:var(--text2)">Date</span><br><strong style="color:var(--text)">${rec.date}</strong></div>
-      <div><span style="color:var(--text2)">Tenant</span><br><strong style="color:var(--text)">${t.name}</strong></div>
+      <div><span style="color:var(--text2)">Tenant</span><br><strong style="color:var(--text)">${escapeHtml(t.name)}</strong></div>
       <div><span style="color:var(--text2)">Room</span><br><strong style="color:var(--text)">Room ${room?.name || '?'}</strong></div>
       <div><span style="color:var(--text2)">Period</span><br><strong style="color:var(--text)">${monthLabel(y, m - 1)}</strong></div>
       <div><span style="color:var(--text2)">Mode</span><br><strong style="color:var(--blue)">${rec.mode}</strong></div>
@@ -5139,7 +5166,7 @@ function showReceiptModal(tenantId, key) {
       <div style="font-size:0.7rem;color:var(--text2);margin-bottom:2px">AMOUNT RECEIVED</div>
       <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)">${fmt(rec.amount)}</div>
     </div>
-    ${rec.note ? `<div style="font-size:0.72rem;color:var(--text2)">Note: ${rec.note}</div>` : ''}
+    ${rec.note ? `<div style="font-size:0.72rem;color:var(--text2)">Note: ${escapeHtml(rec.note||"")}</div>` : ''}
     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:0.65rem;color:var(--muted);text-align:center">
       This is a computer-generated receipt.
     </div>`;
@@ -5208,7 +5235,7 @@ function renderDashboard() {
   const now = new Date();
   const key = monthKey(now.getFullYear(), now.getMonth());
   const label = monthLabel(now.getFullYear(), now.getMonth());
-  const activeTenants = tenants.filter(t => !t.archivedAt && !getRoomById(t.roomId)?.isFamily);
+  const activeTenants = tenants.filter(t => !t.archivedAt);
   const expected = activeTenants.reduce((a, t) => a + Number(t.rent || 0), 0);
   const collected = activeTenants.reduce((a, t) => {
     const rec = getRentRecord(t, key);
@@ -5222,7 +5249,7 @@ function renderDashboard() {
   const meterAlerts = [];
   const thirtyDaysAgo = new Date(now - 30 * 864e5).toISOString().split('T')[0];
   FLOORS.forEach(f => {
-    if (f.isGroundFloor) return;
+    // GF included in meter alerts now
     f.rooms.forEach(r => {
       const last = lastReading(r.id);
       if (!last || last.date < thirtyDaysAgo) {
@@ -5249,11 +5276,11 @@ function renderDashboard() {
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Overdue Tenants</div>
-        <div class="kpi-value ${overdue.length > 0 ? 'red' : 'green'}" style="font-size:${overdue.length > 0 ? '1rem' : '1.4rem'}">${overdue.length > 0 ? overdue.map(t => `<span title="${fmt(t.rent)} due">${t.name.split(' ')[0]}</span>`).join(', ') : '✓ None'}</div>
+        <div class="kpi-value ${overdue.length > 0 ? 'red' : 'green'}" style="font-size:${overdue.length > 0 ? '1rem' : '1.4rem'}">${overdue.length > 0 ? overdue.map(t => `<span title="${fmt(t.rent)} due">${escapeHtml(t.name.split(' ')[0])}</span>`).join(', ') : '✓ None'}</div>
       </div>
       <div class="kpi-card">
         <div class="kpi-label">Occupancy</div>
-        <div class="kpi-value yellow">${activeTenants.length} <span style="font-size:0.7rem;color:var(--text2);font-weight:400">/ ${FLOORS.reduce((a,f)=>a+f.rooms.filter(r=>!r.isFamily).reduce((b,r)=>b+r.capacity,0),0)} beds</span></div>
+        <div class="kpi-value yellow">${activeTenants.length} <span style="font-size:0.7rem;color:var(--text2);font-weight:400">/ ${FLOORS.reduce((a,f)=>a+f.rooms.reduce((b,r)=>b+r.capacity,0),0)} beds</span></div>
       </div>
     </div>
     ${overdue.length > 0 ? `<div style="background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:0.78rem;color:var(--red);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -5274,7 +5301,7 @@ function checkDueBanner() {
   if (dismissed) return;
   // Show only after day 5
   if (now.getDate() < 5) return;
-  const overdue = tenants.filter(t => !t.archivedAt && !getRoomById(t.roomId)?.isFamily && rentStatus(t, key) === 'overdue');
+  const overdue = tenants.filter(t => !t.archivedAt && rentStatus(t, key) === 'overdue');
   if (overdue.length === 0) return;
   const banner = document.getElementById('due-banner');
   document.getElementById('due-banner-body').innerHTML =
@@ -5452,7 +5479,7 @@ function buildPnLTransactions() {
     Object.entries(t.rentHistory || {}).forEach(([key, rec]) => {
       if (!rec?.paid) return;
       const [y, m] = key.split('-').map(Number);
-      transactions.push({ date: rec.date || key, desc: `Rent — ${t.name} (Room ${room?.name||'?'})`, cat: 'Rent', type: 'income', amount: Number(rec.amount || t.rent), key });
+      transactions.push({ date: rec.date || key, desc: `Rent — ${escapeHtml(t.name)} (Room ${escapeHtml(room?.name||'?')})`, cat: 'Rent', type: 'income', amount: Number(rec.amount || t.rent), key });
     });
   });
   expenses.forEach(e => {
@@ -5502,7 +5529,7 @@ function updateMbiRoomOptions(selectedRoomId) {
   const floor = FLOORS.find(f => f.id === floorId) || FLOORS[1];
   const select = document.getElementById('mbi-room');
   select.innerHTML = floor.rooms.map(r => {
-    if (r.isFamily) return `<option value="${r.id}" ${r.id === selectedRoomId ? 'selected' : ''}>GF Family</option>`;
+    
     const ts = tenantsInRoom(r.id);
     const full = ts.length >= r.capacity;
     return `<option value="${r.id}" ${full && r.id !== selectedRoomId ? 'disabled' : ''} ${r.id === selectedRoomId ? 'selected' : ''}>
@@ -5525,7 +5552,7 @@ function confirmMoveBackIn() {
   if (!t) return;
 
   const room = getRoomById(roomId);
-  if (!room?.isFamily) {
+  {
     const existing = tenantsInRoom(roomId);
     if (existing.length >= room.capacity) { alert('That room is full. Pick another.'); return; }
   }
@@ -5700,7 +5727,7 @@ function openMaintModal(id) {
   document.getElementById('maint-status').value   = m?.status || 'open';
   // Room selector
   const sel = document.getElementById('maint-room');
-  sel.innerHTML = FLOORS.flatMap(f => f.rooms.filter(r=>!r.isFamily).map(r =>
+  sel.innerHTML = FLOORS.flatMap(f => f.rooms.map(r =>
     `<option value="${r.id}" ${r.id === m?.roomId ? 'selected':''}>Room ${r.name} (${f.name})</option>`
   )).join('');
   if (m?.roomId) sel.value = m.roomId;
@@ -5775,7 +5802,7 @@ window.openRentHistory = function(tenantId) {
     // Deposit
     if (t.deposit) {
       const d = document.createElement('div');
-      d.innerHTML = `<div style="font-size:0.65rem;color:var(--text2);margin-bottom:2px">DEPOSIT</div><div style="color:var(--blue);font-weight:600">${fmt(t.deposit)} · ${t.depositMode||'UPI'}</div>`;
+      d.innerHTML = `<div style="font-size:0.65rem;color:var(--text2);margin-bottom:2px">DEPOSIT</div><div style="color:var(--blue);font-weight:600">${fmt(t.deposit)} · ${escapeHtml(t.depositMode||'UPI')}</div>`;
       summary.appendChild(d);
     }
     // Rent changes
