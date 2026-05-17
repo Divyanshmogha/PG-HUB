@@ -65,6 +65,12 @@
   // Delete is a no-op — data removed when parent record is deleted
   window._fbDeleteDoc = async (path) => {};
 
+  // On-demand read — for loading photos/data only when needed
+  window._fbGet = async (path) => {
+    const snap = await get(ref(db, path));
+    return snap.exists() ? snap.val() : null;
+  };
+
   // ── Bootstrap: check auth state first, then load data ────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fb-loading').style.display = 'flex';
@@ -3455,7 +3461,7 @@ function renderMeterCards() {
           <span>Reading: ${h.reading}</span>
           <span style="color:var(--blue)">+${h.units||0} u</span>
           <span style="color:var(--accent)">${fmt(h.bill||0)}</span>
-          ${(h.photoUrl || h.imageData) ? `<span style="cursor:pointer" onclick="showMeterImage('${room.id}',${history.length-1-i})" title="View photo">📷</span>` : '<span style="opacity:0.2">📷</span>'}
+          ${(h.hasPhoto || h.photoUrl || h.imageData) ? `<span style="cursor:pointer" onclick="showMeterImage('${room.id}',${history.length-1-i})" title="View photo">📷</span>` : '<span style="opacity:0.2">📷</span>'}
           <span style="cursor:pointer;color:var(--red);font-size:0.85rem;padding:0 4px" onclick="deleteMeterReading('${room.id}',${history.length-1-i})" title="Delete">✕</span>
         </div>`).join('');
 
@@ -3614,7 +3620,7 @@ function renderMeterCards() {
           <span>${h.reading}</span>
           <span style="color:var(--muted)">+${h.units||0} u</span>
           <span style="color:var(--accent);font-weight:600">${fmt(h.bill||0)}</span>
-          ${(h.photoUrl || h.imageData) ? `<span style="cursor:pointer" onclick="showMeterImage('${room.id}',${history.length-1-i})" title="View photo">📷</span>` : '<span style="opacity:0.2">📷</span>'}
+          ${(h.hasPhoto || h.photoUrl || h.imageData) ? `<span style="cursor:pointer" onclick="showMeterImage('${room.id}',${history.length-1-i})" title="View photo">📷</span>` : '<span style="opacity:0.2">📷</span>'}
           <span style="cursor:pointer;color:var(--red);font-size:0.85rem;padding:0 4px;margin-left:6px" onclick="deleteMeterReading('${room.id}',${history.length-1-i})" title="Delete this reading">✕</span>
         </div>`).join('');
 
@@ -4010,25 +4016,22 @@ async function saveMeterReading() {
   const effectiveRate = rateForDate(date);
   const bill = units * effectiveRate;
 
-  // Upload photo to Firebase Storage if captured
-  let photoUrl = null, photoPath = null;
+  // Save photo to separate DB node (not loaded on every app open)
+  let hasPhoto = false;
   if (_meterImageBase64) {
-    const saveBtn = document.querySelector('#meter-modal .btn-primary');
-    if (saveBtn) { saveBtn.textContent = 'Uploading…'; saveBtn.disabled = true; }
-    showToast('Uploading meter photo…', 'info');
+    const dataUrl = `data:${_meterImageMime};base64,${_meterImageBase64}`;
+    const readingIdx = (meterReadings[roomId] || []).length; // index this reading will have
+    const photoKey = `${roomId}_${readingIdx}`;
     try {
-      photoPath = `meters/${roomId}_${Date.now()}.jpg`;
-      const dataUrl = `data:${_meterImageMime};base64,${_meterImageBase64}`;
-      const uploadPromise = window._fbUploadDoc(photoPath, dataUrl, _meterImageMime);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Photo upload timed out')), 60000)
-      );
-      photoUrl = await Promise.race([uploadPromise, timeoutPromise]);
+      await window._fbSet(`meterPhotos/${photoKey}`, {
+        data: dataUrl,
+        mime: _meterImageMime,
+        capturedAt: _meterImageTs || new Date().toISOString()
+      });
+      hasPhoto = true;
     } catch(err) {
-      showToast('⚠ Photo upload failed: ' + err.message + '. Saving reading without photo.', 'error');
-      photoUrl = null;
+      showToast('⚠ Photo save failed: ' + err.message + '. Reading saved without photo.', 'error');
     }
-    if (saveBtn) { saveBtn.textContent = 'Save Reading'; saveBtn.disabled = false; }
   }
 
   if (!meterReadings[roomId]) meterReadings[roomId] = [];
@@ -4037,11 +4040,10 @@ async function saveMeterReading() {
     reading: newR,
     units,
     bill,
-    rate: effectiveRate,                // store rate that was applied
-    photoUrl:    photoUrl,            // Firebase Storage URL (new format)
-    photoPath:   photoPath,           // Storage path for deletion
-    imageMime:   photoUrl ? _meterImageMime : null,
-    capturedAt:  _meterImageTs || null
+    rate: effectiveRate,
+    hasPhoto,
+    imageMime: hasPhoto ? _meterImageMime : null,
+    capturedAt: _meterImageTs || null
   });
   saveMeter();
   closeMeterModal();
@@ -4049,25 +4051,49 @@ async function saveMeterReading() {
   showToast(`✓ Reading saved — ${units} units, ${fmt(bill)}`, 'success');
 }
 
-function showMeterImage(roomId, idx) {
+async function showMeterImage(roomId, idx) {
   const entry = (meterReadings[roomId] || [])[idx];
   if (!entry) return;
-  // Photo stored as data URL (base64) in photoUrl or legacy imageData
+
+  // Try multiple sources for the photo
   let imgSrc = null;
-  if (entry.photoUrl && entry.photoUrl.startsWith('data:')) {
-    imgSrc = entry.photoUrl; // New format: base64 data URL
-  } else if (entry.imageData) {
-    imgSrc = `data:${entry.imageMime||'image/jpeg'};base64,${entry.imageData}`; // Legacy format
-  } else if (entry.photoUrl) {
-    // Old Firebase Storage URL — no longer accessible on Spark plan
-    showToast('This photo was saved to Firebase Storage (not available on Spark plan). New photos will work.', 'info');
+
+  // 1. New format: photo stored in separate meterPhotos node
+  if (entry.hasPhoto) {
+    const photoKey = `${roomId}_${idx}`;
+    showToast('Loading photo…', 'info');
+    try {
+      const photo = await window._fbGet(`meterPhotos/${photoKey}`);
+      if (photo) {
+        imgSrc = photo.data || photo;
+      }
+    } catch(e) {
+      console.error('[PGHub] Failed to load meter photo:', e);
+    }
+  }
+
+  // 2. Legacy: base64 data URL stored directly in photoUrl
+  if (!imgSrc && entry.photoUrl && entry.photoUrl.startsWith('data:')) {
+    imgSrc = entry.photoUrl;
+  }
+
+  // 3. Legacy: raw base64 in imageData field
+  if (!imgSrc && entry.imageData) {
+    imgSrc = `data:${entry.imageMime||'image/jpeg'};base64,${entry.imageData}`;
+  }
+
+  // 4. Old Firebase Storage URL — no longer accessible
+  if (!imgSrc && entry.photoUrl && !entry.photoUrl.startsWith('data:')) {
+    showToast('This photo was saved to Firebase Storage (not available on Spark plan)', 'info');
     return;
   }
+
   if (!imgSrc) {
-    showToast('No photo saved for this reading', 'info');
+    showToast('No photo found for this reading', 'info');
     return;
   }
-  // Show in an overlay instead of new window (handles large data URLs better)
+
+  // Show in overlay
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px';
   overlay.onclick = () => overlay.remove();
@@ -4086,11 +4112,27 @@ async function deleteMeterReading(roomId, idx) {
   const entry = arr[idx];
   if (!entry) return;
   if (!confirm(`Delete reading ${entry.reading} from ${entry.date}?\n\nThis cannot be undone.`)) return;
-  // Delete photo from Storage if it exists
-  if (entry.photoPath) {
-    try { await window._fbDeleteDoc(entry.photoPath); } catch(e) { /* ignore */ }
+  // Delete photo from meterPhotos node if it exists
+  if (entry.hasPhoto) {
+    const photoKey = `${roomId}_${idx}`;
+    try { await window._fbSet(`meterPhotos/${photoKey}`, null); } catch(e) { /* ignore */ }
   }
   arr.splice(idx, 1);
+  // Re-index remaining photos after deletion (shift keys down)
+  // This is needed because photos are keyed by roomId_index
+  for (let i = idx; i < arr.length; i++) {
+    if (arr[i].hasPhoto) {
+      const oldKey = `${roomId}_${i+1}`;
+      const newKey = `${roomId}_${i}`;
+      try {
+        const photoData = await window._fbGet(`meterPhotos/${oldKey}`);
+        if (photoData) {
+          await window._fbSet(`meterPhotos/${newKey}`, photoData);
+          await window._fbSet(`meterPhotos/${oldKey}`, null);
+        }
+      } catch(e) { /* ignore re-index errors */ }
+    }
+  }
   saveMeter();
   renderMeterCards();
   showToast('✓ Reading deleted', 'success');
