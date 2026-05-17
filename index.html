@@ -24,7 +24,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+  // Firebase Storage not used — photos stored as compressed base64 in Realtime DB
+  // This avoids Blaze plan requirement
 
   const firebaseConfig = {
     apiKey: "AIzaSyBHuQY_gYoLUoXvABtdnRETxxFWOHN8WiY",
@@ -39,14 +40,12 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const auth = getAuth(app);
-  const storage = getStorage(app);
 
   // ── Expose auth helpers to global scope ────────────────────────────────────
   window._fbSignIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
   window._fbSignOut = () => signOut(auth);
 
   // ── Expose DB helpers to global scope ──────────────────────────────────────
-  // Safe write — shows toast on failure instead of silently dropping data
   window._fbSet = (path, data) => {
     return set(ref(db, path), data).catch(err => {
       console.error('[PGHub] Firebase write failed:', path, err);
@@ -58,21 +57,13 @@
     cb(snap.exists() ? snap.val() : null);
   });
 
-  // ── Firebase Storage helpers ───────────────────────────────────────────────
-  // Upload a base64 data-URL to Storage using binary upload (fast), return download URL
+  // ── Photo helpers (base64 in DB, no Storage needed) ─────────────────────────
+  // "Upload" just returns the dataUrl — it gets saved inline with the tenant/reading data
   window._fbUploadDoc = async (path, dataUrl, mimeType) => {
-    const storageRef = sRef(storage, path);
-    // Convert data URL to Blob for binary upload (3-5x faster than uploadString)
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const finalBlob = new Blob([blob], { type: mimeType || blob.type });
-    await uploadBytes(storageRef, finalBlob, { contentType: mimeType || blob.type });
-    return await getDownloadURL(storageRef);
+    return dataUrl; // stored directly in Realtime DB as base64
   };
-  // Delete a file from Storage
-  window._fbDeleteDoc = async (path) => {
-    try { await deleteObject(sRef(storage, path)); } catch(e) { /* ignore if not found */ }
-  };
+  // Delete is a no-op — data removed when parent record is deleted
+  window._fbDeleteDoc = async (path) => {};
 
   // ── Bootstrap: check auth state first, then load data ────────────────────
   window.addEventListener('DOMContentLoaded', () => {
@@ -1116,6 +1107,22 @@
     .btn { font-size: 0.88rem; padding: 11px 18px; min-height: 44px; }
     .modal { border-radius: 16px 16px 0 0; }
   }
+
+  /* ── GLOBAL FONT CONSISTENCY ─── */
+  /* Inter for everything except login screen (DM Mono) and headings (Syne) */
+  body, td, th, input, select, textarea, button, label, span, p, div, a {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .room-number, .room-name, .kpi-value, .kpi-label, h1, h2, h3,
+  .floor-label, .section-title, [class*="heading"] {
+    font-family: 'Syne', sans-serif;
+  }
+  #login-screen, #login-screen * {
+    font-family: 'DM Mono', monospace;
+  }
+  #login-screen .logo, #fb-loading .logo {
+    font-family: 'Syne', sans-serif;
+  }
 </style>
 <!-- SheetJS for .xlsx exports -->
 <!-- Content Security Policy -->
@@ -1445,6 +1452,7 @@
     </button>
     <button onclick="doLogout()" title="Sign Out" class="signout-btn">⏻ Sign Out</button>
   </div>
+  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v16.0</div>
 </header>
 
 <div class="tabs">
@@ -1769,7 +1777,7 @@
   <!-- SETTINGS -->
   <div class="section" id="sec-settings">
     <div style="max-width:600px">
-      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:20px">⚙ PG Settings</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:20px">⚙ PG Settings</div>
 
       <!-- PG Identity -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
@@ -1870,7 +1878,7 @@
 <div id="due-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:5000;background:var(--surface);border-bottom:2px solid var(--accent);padding:14px 20px;box-shadow:0 4px 24px rgba(0,0,0,0.4)">
   <div style="max-width:1300px;margin:0 auto;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
     <div style="flex:1">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);margin-bottom:4px">🔔 Rent Due Reminder</div>
+      <div style="font-family:'Inter',sans-serif;font-weight:700;color:var(--accent);margin-bottom:4px">🔔 Rent Due Reminder</div>
       <div id="due-banner-body" style="font-size:0.78rem;color:var(--text2)"></div>
     </div>
     <button onclick="document.getElementById('due-banner').style.display='none';localStorage.setItem('banner_dismissed_'+new Date().toISOString().slice(0,7),'1')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;flex-shrink:0">✕</button>
@@ -1999,7 +2007,7 @@
         </div>
         <div style="display:flex;justify-content:space-between">
           <span style="color:var(--text2)">Bill amount</span>
-          <span id="bp-bill" style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;font-size:1rem"></span>
+          <span id="bp-bill" style="color:var(--accent);font-family:'Inter',sans-serif;font-weight:700;font-size:1rem"></span>
         </div>
       </div>
 
@@ -2889,16 +2897,46 @@ function loadIdFile(file) {
     return;
   }
   const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-  const reader = new FileReader();
-  reader.onload = e => {
-    currentIdDoc = { name: file.name, type: file.type, data: e.target.result };
-    document.getElementById('id-file-name').textContent = `${file.name} (${sizeMB} MB)`;
-    document.getElementById('id-upload-prompt').style.display = 'none';
-    document.getElementById('id-upload-done').style.display = 'block';
-    document.getElementById('id-existing').style.display = 'none';
-  };
-  reader.onerror = () => showToast('⚠ Could not read file. Try a different one.', 'error');
-  reader.readAsDataURL(file);
+
+  // If it's an image, compress it before storing (faster upload)
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1600;
+        let w = img.width, h = img.height;
+        if (w > h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.85);
+        const compressedSizeKB = Math.round((compressed.length * 3 / 4) / 1024);
+        currentIdDoc = { name: file.name, type: 'image/jpeg', data: compressed };
+        document.getElementById('id-file-name').textContent = `${file.name} (compressed to ~${compressedSizeKB} KB)`;
+        document.getElementById('id-upload-prompt').style.display = 'none';
+        document.getElementById('id-upload-done').style.display = 'block';
+        document.getElementById('id-existing').style.display = 'none';
+      };
+      img.onerror = () => showToast('⚠ Could not process image', 'error');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => showToast('⚠ Could not read file. Try a different one.', 'error');
+    reader.readAsDataURL(file);
+  } else {
+    // PDF or other non-image file — upload as-is
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentIdDoc = { name: file.name, type: file.type, data: e.target.result };
+      document.getElementById('id-file-name').textContent = `${file.name} (${sizeMB} MB)`;
+      document.getElementById('id-upload-prompt').style.display = 'none';
+      document.getElementById('id-upload-done').style.display = 'block';
+      document.getElementById('id-existing').style.display = 'none';
+    };
+    reader.onerror = () => showToast('⚠ Could not read file. Try a different one.', 'error');
+    reader.readAsDataURL(file);
+  }
 }
 
 function clearIdFile() {
@@ -3450,18 +3488,18 @@ function renderMeterCards() {
         <!-- GF Electricity -->
         <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:12px;padding:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800">⚡ GF Electricity</div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">⚡ GF Electricity</div>
             <div style="font-size:0.66rem;color:var(--muted)">Dedicated single meter</div></div>
             <button class="btn btn-primary" style="padding:7px 12px;font-size:0.7rem" onclick="openMeterModal('${room.id}')">+ Reading</button>
           </div>
           ${lastEntry ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div style="background:var(--surface2);border-radius:8px;padding:8px;text-align:center">
               <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">LAST READING</div>
-              <div style="font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700">${lastEntry.reading}</div>
+              <div style="font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700">${lastEntry.reading}</div>
             </div>
             <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:8px;text-align:center">
               <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">BILL</div>
-              <div style="font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;color:var(--accent)">${fmt(Math.round(rd.totalBill))}</div>
+              <div style="font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:700;color:var(--accent)">${fmt(Math.round(rd.totalBill))}</div>
             </div>
           </div>` : '<div style="text-align:center;padding:12px;color:var(--muted);font-size:0.75rem">No readings yet</div>'}
           ${history.length ? histRows : ''}
@@ -3469,7 +3507,7 @@ function renderMeterCards() {
         <!-- Water Motor -->
         <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:12px;padding:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800">💧 Water Motor</div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">💧 Water Motor</div>
             <div style="font-size:0.66rem;color:var(--muted)">50% split with family</div></div>
             <button class="btn" style="padding:7px 12px;font-size:0.7rem;background:var(--blue);color:#fff" onclick="openMotorModal()">+ Reading</button>
           </div>
@@ -3487,7 +3525,7 @@ function renderMeterCards() {
         <!-- PNG Gas -->
         <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:12px;padding:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div><div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800">🔥 PNG Gas</div>
+            <div><div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">🔥 PNG Gas</div>
             <div style="font-size:0.66rem;color:var(--muted)">Piped Natural Gas (SCM)</div></div>
             <button class="btn" style="padding:7px 12px;font-size:0.7rem;background:var(--green);color:#000" onclick="openGasModal()">+ Reading</button>
           </div>
@@ -3528,7 +3566,7 @@ function renderMeterCards() {
     mainCard.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div>
-          <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800;color:var(--accent2)">⚡ Main Floor Meter — Floor ${floor.id}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800;color:var(--accent2)">⚡ Main Floor Meter — Floor ${floor.id}</div>
           <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">Master meter · readings split equally across rooms</div>
         </div>
         <button class="btn" style="padding:7px 14px;font-size:0.72rem;background:var(--accent2);color:#fff" onclick="openMainMeterModal(${floor.id})">+ Reading</button>
@@ -3537,15 +3575,15 @@ function renderMeterCards() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
         <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">LAST READING</div>
-          <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700">${mainLast.reading}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:700">${mainLast.reading}</div>
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">UNITS CONSUMED</div>
-          <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--blue)">${mainLast.units||0}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:700;color:var(--blue)">${mainLast.units||0}</div>
         </div>
         <div style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.25);border-radius:8px;padding:10px;text-align:center">
           <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">UNACCOUNTED</div>
-          <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--accent2)">${diff} u</div>
+          <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:700;color:var(--accent2)">${diff} u</div>
         </div>
       </div>
       <div style="background:rgba(255,107,53,0.06);border:1px solid rgba(255,107,53,0.15);border-radius:8px;padding:10px;font-size:0.73rem;color:var(--text2);margin-bottom:10px">
@@ -3586,7 +3624,7 @@ function renderMeterCards() {
             <div style="width:20px;height:20px;border-radius:50%;background:${colorForTenant(t.id)}22;color:${colorForTenant(t.id)};display:flex;align-items:center;justify-content:center;font-size:0.58rem;font-weight:700">${initials(t.name)}</div>
             <span>${escapeHtml(t.name)}</span>
           </div>
-          <span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700">${lastEntry ? fmt(Math.round(rd.perTenantBill)) : '—'}</span>
+          <span style="color:var(--accent);font-family:'Inter',sans-serif;font-weight:700">${lastEntry ? fmt(Math.round(rd.perTenantBill)) : '—'}</span>
         </div>`).join('')
         : '<div style="color:var(--muted);font-size:0.72rem">No tenants</div>';
 
@@ -3595,7 +3633,7 @@ function renderMeterCards() {
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
           <div>
-            <div style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:800">Room ${room.name}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800">Room ${room.name}</div>
             <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">${room.washroom==='attached'?'Attached WR':'Common WR'}${room.balcony?' · Balcony':''}</div>
           </div>
           <button class="btn btn-primary" style="padding:7px 14px;font-size:0.72rem" onclick="openMeterModal('${room.id}')">+ Reading</button>
@@ -3604,19 +3642,19 @@ function renderMeterCards() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">ROOM UNITS</div>
-            <div style="font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--blue)">${lastEntry.units||0}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;color:var(--blue)">${lastEntry.units||0}</div>
           </div>
           <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">EXTRA (DIFF)</div>
-            <div style="font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--accent2)">${rd.mainAvailable ? '+'+rd.extraUnits.toFixed(1) : '—'}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;color:var(--accent2)">${rd.mainAvailable ? '+'+rd.extraUnits.toFixed(1) : '—'}</div>
           </div>
           <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">TOTAL UNITS</div>
-            <div style="font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700">${rd.mainAvailable ? rd.totalUnits.toFixed(1) : lastEntry.units||0}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700">${rd.mainAvailable ? rd.totalUnits.toFixed(1) : lastEntry.units||0}</div>
           </div>
           <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.2);border-radius:8px;padding:10px;text-align:center">
             <div style="font-size:0.58rem;color:var(--muted);margin-bottom:3px">ROOM BILL</div>
-            <div style="font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--accent)">${rd.mainAvailable ? fmt(Math.round(rd.totalBill)) : fmt(lastEntry.bill||0)}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:0.95rem;font-weight:700;color:var(--accent)">${rd.mainAvailable ? fmt(Math.round(rd.totalBill)) : fmt(lastEntry.bill||0)}</div>
           </div>
         </div>
         <div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:10px">
@@ -4014,23 +4052,32 @@ async function saveMeterReading() {
 function showMeterImage(roomId, idx) {
   const entry = (meterReadings[roomId] || [])[idx];
   if (!entry) return;
-  // New format: photoUrl from Firebase Storage
-  if (entry.photoUrl) {
-    window.open(entry.photoUrl, '_blank', 'noopener,noreferrer');
+  // Photo stored as data URL (base64) in photoUrl or legacy imageData
+  let imgSrc = null;
+  if (entry.photoUrl && entry.photoUrl.startsWith('data:')) {
+    imgSrc = entry.photoUrl; // New format: base64 data URL
+  } else if (entry.imageData) {
+    imgSrc = `data:${entry.imageMime||'image/jpeg'};base64,${entry.imageData}`; // Legacy format
+  } else if (entry.photoUrl) {
+    // Old Firebase Storage URL — no longer accessible on Spark plan
+    showToast('This photo was saved to Firebase Storage (not available on Spark plan). New photos will work.', 'info');
     return;
   }
-  // Legacy format: base64 imageData (still in DB)
-  if (entry.imageData) {
-    const mime = entry.imageMime || 'image/jpeg';
-    const win = window.open('', '_blank', 'noopener,noreferrer');
-    win.document.write(`<!DOCTYPE html><html><body style="margin:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh">
-      <img src="data:${mime};base64,${entry.imageData}" style="max-width:100%;max-height:90vh;object-fit:contain">
-      <p style="font-family:monospace;color:#fff;padding:12px;font-size:0.8rem">
-        Reading: ${entry.reading} units | Date: ${entry.date} | Bill: ₹${entry.bill}
-      </p>
-    </body></html>`);
-    win.document.close();
+  if (!imgSrc) {
+    showToast('No photo saved for this reading', 'info');
+    return;
   }
+  // Show in an overlay instead of new window (handles large data URLs better)
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px';
+  overlay.onclick = () => overlay.remove();
+  overlay.innerHTML = `
+    <img src="${imgSrc}" style="max-width:95%;max-height:80vh;object-fit:contain;border-radius:8px">
+    <p style="font-family:'Inter',sans-serif;color:#fff;padding:12px;font-size:0.8rem;text-align:center">
+      Reading: ${entry.reading} | Date: ${entry.date} | Bill: ₹${entry.bill}<br>
+      <span style="font-size:0.65rem;color:#888">Tap anywhere to close</span>
+    </p>`;
+  document.body.appendChild(overlay);
 }
 
 // Delete a single meter reading (and its Storage photo if any)
@@ -4051,43 +4098,7 @@ async function deleteMeterReading(roomId, idx) {
 
 // One-time migration: move legacy base64 meter photos to Firebase Storage
 // Runs in background after app loads, processes one entry per second to avoid rate limits
-async function migrateMeterPhotos() {
-  if (window._meterMigrationRunning) return;
-  window._meterMigrationRunning = true;
-  try {
-    let migrated = 0;
-    for (const roomId of Object.keys(meterReadings)) {
-      const arr = meterReadings[roomId];
-      if (!Array.isArray(arr)) continue;
-      for (let i = 0; i < arr.length; i++) {
-        const entry = arr[i];
-        if (entry?.imageData && !entry.photoUrl) {
-          try {
-            const path = `meters/${roomId}_legacy_${Date.now()}_${i}.jpg`;
-            const mime = entry.imageMime || 'image/jpeg';
-            const dataUrl = `data:${mime};base64,${entry.imageData}`;
-            const url = await window._fbUploadDoc(path, dataUrl, mime);
-            entry.photoUrl  = url;
-            entry.photoPath = path;
-            entry.imageMime = mime;
-            delete entry.imageData; // Remove from DB to save space
-            migrated++;
-            await new Promise(r => setTimeout(r, 1000)); // 1 sec gap between uploads
-          } catch(e) {
-            console.error('[PGHub] Failed to migrate meter photo:', e);
-          }
-        }
-      }
-    }
-    if (migrated > 0) {
-      saveMeter(); // Persist migrated state
-      console.log('[PGHub] Migrated', migrated, 'meter photos to Storage');
-      showToast(`✓ Migrated ${migrated} meter photo(s) to Storage — DB usage will drop`, 'success');
-    }
-  } finally {
-    window._meterMigrationRunning = false;
-  }
-}
+// Migration not needed — photos stored as base64 in Realtime DB
 
 document.getElementById('meter-modal')?.addEventListener('click', function(e) {
   if (e.target === this) closeMeterModal();
@@ -4165,7 +4176,7 @@ function renderExpensesTable() {
       <td style="white-space:nowrap">${e.date}</td>
       <td style="color:var(--text)">${escapeHtml(e.description||"")}</td>
       <td><span class="badge" style="background:${color}22;color:${color}">${e.category}</span></td>
-      <td style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:700">${fmt(e.amount)}</td>
+      <td style="color:var(--accent);font-family:'Inter',sans-serif;font-weight:700">${fmt(e.amount)}</td>
       <td style="color:var(--muted);font-size:0.72rem">${escapeHtml(e.note||'—')}</td>
       <td>
         <button class="action-btn" onclick="openExpenseModal('${e.id}')">Edit</button>
@@ -4488,7 +4499,7 @@ function renderPnL() {
     <td style="color:var(--text)">${t.desc}</td>
     <td><span class="badge badge-yellow">${t.cat}</span></td>
     <td><span class="badge ${t.type==='income'?'badge-green':'badge-red'}">${t.type==='income'?'Income':'Outgoing'}</span></td>
-    <td style="color:${t.type==='income'?'var(--green)':'var(--red)'};font-family:'Syne',sans-serif;font-weight:700">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
+    <td style="color:${t.type==='income'?'var(--green)':'var(--red)'};font-family:'Inter',sans-serif;font-weight:700">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
   </tr>`).join('');
 
   document.getElementById('pnl-empty').style.display = sorted.length ? 'none' : 'block';
@@ -5156,7 +5167,7 @@ function showReceiptModal(tenantId, key) {
 
   document.getElementById('receipt-body').innerHTML = `
     <div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">
-      <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text)">${pgName}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text)">${pgName}</div>
       ${s.address ? `<div style="font-size:0.7rem;color:var(--text2);margin-top:2px">${s.address}</div>` : ''}
       <div style="font-size:0.68rem;color:var(--muted);margin-top:4px">RENT RECEIPT</div>
     </div>
@@ -5170,7 +5181,7 @@ function showReceiptModal(tenantId, key) {
     </div>
     <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.25);border-radius:8px;padding:12px;text-align:center;margin-bottom:12px">
       <div style="font-size:0.7rem;color:var(--text2);margin-bottom:2px">AMOUNT RECEIVED</div>
-      <div style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)">${fmt(rec.amount)}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.6rem;font-weight:800;color:var(--accent)">${fmt(rec.amount)}</div>
     </div>
     ${rec.note ? `<div style="font-size:0.72rem;color:var(--text2)">Note: ${escapeHtml(rec.note||"")}</div>` : ''}
     <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:0.65rem;color:var(--muted);text-align:center">
@@ -5833,8 +5844,6 @@ window.openRentHistory = function(tenantId) {
 // ─── BOOT: check banner after init ────────────────────────────────────────────
 window.addEventListener('pgReady', () => {
   setTimeout(checkDueBanner, 1500);
-  // Run meter photo migration in background after a short delay
-  setTimeout(() => migrateMeterPhotos(), 5000);
 });
 
 </script>
