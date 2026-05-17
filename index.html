@@ -24,7 +24,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getStorage, ref as sRef, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+  import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBHuQY_gYoLUoXvABtdnRETxxFWOHN8WiY",
@@ -59,10 +59,14 @@
   });
 
   // ── Firebase Storage helpers ───────────────────────────────────────────────
-  // Upload a base64 data-URL to Storage, return download URL
+  // Upload a base64 data-URL to Storage using binary upload (fast), return download URL
   window._fbUploadDoc = async (path, dataUrl, mimeType) => {
     const storageRef = sRef(storage, path);
-    await uploadString(storageRef, dataUrl, 'data_url', { contentType: mimeType });
+    // Convert data URL to Blob for binary upload (3-5x faster than uploadString)
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const finalBlob = new Blob([blob], { type: mimeType || blob.type });
+    await uploadBytes(storageRef, finalBlob, { contentType: mimeType || blob.type });
     return await getDownloadURL(storageRef);
   };
   // Delete a file from Storage
@@ -271,7 +275,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -321,7 +325,7 @@
   }
   .tab {
     padding: 10px 20px;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 0.78rem;
     cursor: pointer;
     border: none;
@@ -473,7 +477,7 @@
     background: none;
     width: 100%;
     transition: all 0.2s;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
   .add-tenant-btn:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -570,7 +574,7 @@
     border-radius: 8px;
     padding: 10px 12px;
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 0.82rem;
     transition: border-color 0.2s;
     outline: none;
@@ -590,7 +594,7 @@
   .btn {
     padding: 9px 20px;
     border-radius: 8px;
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 0.78rem;
     cursor: pointer;
     border: none;
@@ -644,7 +648,7 @@
     font-size: 0.68rem;
     cursor: pointer;
     color: var(--text2);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     transition: all 0.2s;
     margin-right: 4px;
   }
@@ -695,7 +699,7 @@
     border: none;
     outline: none;
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-size: 0.8rem;
     width: 100%;
   }
@@ -767,7 +771,7 @@
       border: none;
       background: none;
       color: var(--muted);
-      font-family: 'DM Mono', monospace;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       font-size: 0.6rem;
       cursor: pointer;
       gap: 3px;
@@ -841,7 +845,7 @@
   /* Display font — restrained, only on real headings */
   .logo, .room-number, .modal-title, .kpi-value,
   .washroom-info strong, .floor-label {
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   /* HEADER — flatter, refined */
@@ -1550,10 +1554,10 @@
 
     <!-- Month selector -->
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <button onclick="financeMonthShift(-1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.8rem">‹</button>
+      <button onclick="financeMonthShift(-1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.8rem">‹</button>
       <div id="f-month-label" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--text);min-width:120px;text-align:center"></div>
-      <button onclick="financeMonthShift(1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.8rem">›</button>
-      <button onclick="financeGoToToday()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 12px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.72rem">Today</button>
+      <button onclick="financeMonthShift(1)" style="background:var(--surface);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:6px 14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.8rem">›</button>
+      <button onclick="financeGoToToday()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:5px 12px;cursor:pointer;font-family:'Inter',sans-serif;font-size:0.72rem">Today</button>
     </div>
 
     <!-- Bulk actions bar -->
@@ -2262,7 +2266,7 @@ function escapeHtml(s) {
 function showToast(msg, type = 'info') {
   const el = document.createElement('div');
   const bg = type === 'error' ? 'rgba(255,71,87,0.95)' : type === 'success' ? 'rgba(61,220,132,0.95)' : 'rgba(30,32,41,0.97)';
-  el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:10px 20px;border-radius:10px;font-family:'DM Mono',monospace;font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;pointer-events:none`;
+  el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:10px 20px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;pointer-events:none`;
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
@@ -3052,7 +3056,7 @@ async function saveTenant() {
       // 30-second timeout to prevent infinite spinning on slow connections
       const uploadPromise = window._fbUploadDoc(path, currentIdDoc.data, currentIdDoc.type);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Upload timed out — check your internet')), 30000)
+        setTimeout(() => reject(new Error('Upload timed out — check your internet')), 60000)
       );
       const url = await Promise.race([uploadPromise, timeoutPromise]);
       idDocRecord = { url, name: currentIdDoc.name, type: currentIdDoc.type, storagePath: path };
@@ -3076,7 +3080,7 @@ async function saveTenant() {
       const dataUrl = `data:${_tenantPhotoMime};base64,${_tenantPhotoBase64}`;
       const uploadPromise = window._fbUploadDoc(path, dataUrl, _tenantPhotoMime);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Photo upload timed out')), 30000)
+        setTimeout(() => reject(new Error('Photo upload timed out')), 60000)
       );
       const url = await Promise.race([uploadPromise, timeoutPromise]);
       photoRecord = { url, type: _tenantPhotoMime, storagePath: path, uploadedAt: new Date().toISOString() };
@@ -3407,12 +3411,14 @@ function renderMeterCards() {
 
       if (lastEntry) { grandTotalUnits += rd.roomUnits; grandTotalBill += rd.totalBill; }
 
-      const histRows = history.slice().reverse().slice(0,4).map(h => `
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.7rem" title="Rate applied: ₹${h.rate||rate}/unit">
+      const histRows = history.slice().reverse().slice(0,4).map((h, i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.7rem" title="Rate applied: ₹${h.rate||rate}/unit">
           <span style="color:var(--text2)">${h.date||'—'}</span>
           <span>Reading: ${h.reading}</span>
           <span style="color:var(--blue)">+${h.units||0} u</span>
           <span style="color:var(--accent)">${fmt(h.bill||0)}</span>
+          ${(h.photoUrl || h.imageData) ? `<span style="cursor:pointer" onclick="showMeterImage('${room.id}',${history.length-1-i})" title="View photo">📷</span>` : '<span style="opacity:0.2">📷</span>'}
+          <span style="cursor:pointer;color:var(--red);font-size:0.85rem;padding:0 4px" onclick="deleteMeterReading('${room.id}',${history.length-1-i})" title="Delete">✕</span>
         </div>`).join('');
 
       // Motor history
@@ -3977,7 +3983,7 @@ async function saveMeterReading() {
       const dataUrl = `data:${_meterImageMime};base64,${_meterImageBase64}`;
       const uploadPromise = window._fbUploadDoc(photoPath, dataUrl, _meterImageMime);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Photo upload timed out')), 30000)
+        setTimeout(() => reject(new Error('Photo upload timed out')), 60000)
       );
       photoUrl = await Promise.race([uploadPromise, timeoutPromise]);
     } catch(err) {
