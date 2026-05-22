@@ -74,6 +74,14 @@
   // ── Bootstrap: check auth state first, then load data ────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fb-loading').style.display = 'flex';
+    // Timeout fallback: if Firebase doesn't respond in 10 seconds, show login
+    window._fbConnectTimeout = setTimeout(() => {
+      if (!window._appBooted) {
+        document.getElementById('fb-loading').style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        console.log('[PGHub] Firebase connection timeout — showing login');
+      }
+    }, 10000);
 
     let _appBooted = false; window._appBooted = false; Object.defineProperty(window, '_appBooted', { get: () => _appBooted, set: v => { _appBooted = v; } });
     onAuthStateChanged(auth, user => {
@@ -81,6 +89,8 @@
       if (user) {
         _appBooted = true;
         window._currentUid = user.uid;
+        if (window._fbConnectTimeout) clearTimeout(window._fbConnectTimeout);
+        document.getElementById('fb-loading').style.display = 'none';
         document.getElementById('login-screen').style.display = 'none';
         loadFirebaseData();
       } else {
@@ -202,7 +212,7 @@
       if (!window._fbReady || !window._allDataLoaded) return;
       meterReadings = snap.exists() ? snap.val() : {};
       if (meterReadings.__rate !== undefined) rate = Number(meterReadings.__rate) || 13;
-      const sec = document.getElementById('sec-electricity');
+      const sec = document.getElementById('sec-utilities');
       if (sec && sec.classList.contains('active')) renderMeterCards();
     });
 
@@ -210,7 +220,7 @@
       if (!window._fbReady || !window._allDataLoaded) return;
       const val = snap.exists() ? snap.val() : null;
       expenses = val ? (Array.isArray(val) ? val.filter(Boolean) : Object.values(val)) : [];
-      const sec = document.getElementById('sec-expenses');
+      const sec = document.getElementById('sec-finance');
       if (sec && sec.classList.contains('active')) renderExpensesTab();
     });
 
@@ -224,7 +234,7 @@
       if (!window._fbReady || !window._allDataLoaded) return;
       const val = snap.exists() ? snap.val() : null;
       STATE.maintenance = val ? (Array.isArray(val) ? val.filter(Boolean) : Object.values(val)) : [];
-      const sec = document.getElementById('sec-maintenance');
+      const sec = document.getElementById('sec-utilities');
       if (sec && sec.classList.contains('active')) renderMaintenanceTab();
     });
 
@@ -1114,6 +1124,84 @@
     .modal { border-radius: 16px 16px 0 0; }
   }
 
+
+  /* ── V17 SUB-TABS ────────────────────────────────────────────────────────── */
+  .sub-tab {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .sub-tab:hover { background: var(--surface2); }
+  .sub-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* ── V17 FLOOR SELECTOR ──────────────────────────────────────────────────── */
+  .floor-btn {
+    padding: 8px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .floor-btn:hover { background: var(--surface2); border-color: var(--accent); }
+  .floor-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .floor-dropdown {
+    display: none;
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    .floor-btn { display: none !important; }
+    .floor-dropdown { display: block !important; }
+  }
+
+  /* ── V17 COSMETIC IMPROVEMENTS ───────────────────────────────────────────── */
+  /* Smoother transitions */
+  .section { transition: opacity 0.2s ease; }
+  .room-card, .kpi-card, .table-wrap, .toolbar {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  /* Better card shadows */
+  .room-card { box-shadow: 0 2px 10px rgba(0,0,0,0.15); border-radius: 14px; }
+  .room-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.25); transform: translateY(-1px); }
+  .kpi-card { box-shadow: 0 2px 8px rgba(0,0,0,0.12); border-radius: 14px; }
+
+  /* More whitespace between sections */
+  .kpi-grid { gap: 14px; }
+  .toolbar { margin-bottom: 18px; }
+  .table-wrap { border-radius: 12px; overflow: hidden; }
+
+  /* Toast at top instead of bottom */
+
   /* ── GLOBAL FONT CONSISTENCY ─── */
   /* Inter for everything except login screen (DM Mono) and headings (Syne) */
   body, td, th, input, select, textarea, button, label, span, p, div, a {
@@ -1121,13 +1209,13 @@
   }
   .room-number, .room-name, .kpi-value, .kpi-label, h1, h2, h3,
   .floor-label, .section-title, [class*="heading"] {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
   #login-screen, #login-screen * {
     font-family: 'DM Mono', monospace;
   }
   #login-screen .logo, #fb-loading .logo {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
   }
 </style>
 <!-- SheetJS for .xlsx exports -->
@@ -1394,7 +1482,7 @@
     <div style="width:8px;height:8px;border-radius:50%;background:#f5c842;animation:dot 1.2s ease-in-out 0.2s infinite"></div>
     <div style="width:8px;height:8px;border-radius:50%;background:#f5c842;animation:dot 1.2s ease-in-out 0.4s infinite"></div>
   </div>
-  <div style="font-family:'DM Mono',monospace;font-size:0.8rem;color:#5a5f72">Connecting to Firebase...</div>
+  <div style="font-family:'Inter',sans-serif;font-size:0.8rem;color:#5a5f72">Connecting to Firebase...</div>
   <style>@keyframes dot { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }</style>
 </div>
 
@@ -1404,25 +1492,25 @@
   <div style="width:100%;max-width:360px">
     <div style="text-align:center;margin-bottom:36px">
       <div style="font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:#e8eaf0;margin-bottom:8px">PG<span style="color:#f5c842">Hub</span></div>
-      <div style="font-family:'DM Mono',monospace;font-size:0.78rem;color:#5a5f72">Secure PG Management</div>
+      <div style="font-family:'Inter',sans-serif;font-size:0.78rem;color:#5a5f72">Secure PG Management</div>
     </div>
 
     <div style="background:#16181f;border:1px solid #2a2d3a;border-radius:16px;padding:28px">
       <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#e8eaf0;margin-bottom:20px">Sign In</div>
 
       <div style="margin-bottom:14px">
-        <label style="display:block;font-family:'DM Mono',monospace;font-size:0.68rem;color:#9ba3b8;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Email</label>
+        <label style="display:block;font-family:'Inter',sans-serif;font-size:0.68rem;color:#9ba3b8;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Email</label>
         <input id="login-email" type="email" placeholder="your email" autocomplete="off"
-          style="width:100%;background:#1e2029;border:1px solid #2a2d3a;border-radius:8px;padding:12px;color:#e8eaf0;font-family:'DM Mono',monospace;font-size:0.82rem;outline:none"
+          style="width:100%;background:#1e2029;border:1px solid #2a2d3a;border-radius:8px;padding:12px;color:#e8eaf0;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none"
           onfocus="this.style.borderColor='#f5c842'" onblur="this.style.borderColor='#2a2d3a'"
           onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
       </div>
 
       <div style="margin-bottom:20px">
-        <label style="display:block;font-family:'DM Mono',monospace;font-size:0.68rem;color:#9ba3b8;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Password</label>
+        <label style="display:block;font-family:'Inter',sans-serif;font-size:0.68rem;color:#9ba3b8;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:6px">Password</label>
         <div style="position:relative">
           <input id="login-password" type="password" placeholder="Enter your password" autocomplete="new-password"
-            style="width:100%;background:#1e2029;border:1px solid #2a2d3a;border-radius:8px;padding:12px;padding-right:44px;color:#e8eaf0;font-family:'DM Mono',monospace;font-size:0.82rem;outline:none"
+            style="width:100%;background:#1e2029;border:1px solid #2a2d3a;border-radius:8px;padding:12px;padding-right:44px;color:#e8eaf0;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none"
             onfocus="this.style.borderColor='#f5c842'" onblur="this.style.borderColor='#2a2d3a'"
             onkeydown="if(event.key==='Enter')doLogin()">
           <button onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:#5a5f72">👁</button>
@@ -1432,12 +1520,12 @@
       <div id="login-error" style="display:none;background:rgba(255,71,87,0.12);border:1px solid rgba(255,71,87,0.3);border-radius:8px;padding:10px 12px;font-size:0.72rem;color:#ff4757;margin-bottom:14px;font-family:'DM Mono',monospace"></div>
 
       <button onclick="doLogin()" id="login-btn"
-        style="width:100%;background:#f5c842;color:#000;border:none;border-radius:8px;padding:14px;font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s;min-height:48px">
+        style="width:100%;background:#f5c842;color:#000;border:none;border-radius:8px;padding:14px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:background 0.2s;min-height:48px">
         Sign In →
       </button>
     </div>
 
-    <div style="text-align:center;margin-top:20px;font-family:'DM Mono',monospace;font-size:0.68rem;color:#5a5f72">
+    <div style="text-align:center;margin-top:20px;font-family:'Inter',sans-serif;font-size:0.68rem;color:#5a5f72">
       🔒 Secured with Firebase Authentication
     </div>
   </div>
@@ -1449,7 +1537,7 @@
   <div class="logo">PG<span>Hub</span></div>
   <div class="header-stats">
     <div class="stat" onclick="switchTab('tenants')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Tenants"><strong id="h-total">0</strong>Tenants</div>
-    <div class="stat" onclick="switchTab('overview')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Overview"><strong id="h-occupied">0/12</strong>Beds</div>
+    <div class="stat" onclick="switchTab('home')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Overview"><strong id="h-occupied">0/12</strong>Beds</div>
     <div class="stat" onclick="switchTab('finance')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Finance"><strong id="h-due">₹0</strong>Rent Due</div>
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme" class="theme-toggle">
       <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
@@ -1458,24 +1546,21 @@
     </button>
     <button onclick="doLogout()" title="Sign Out" class="signout-btn">⏻ Sign Out</button>
   </div>
-  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v16.0</div>
+  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v17.0</div>
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('overview')">Overview</button>
-  <button class="tab" onclick="switchTab('tenants')">Tenants</button>
-  <button class="tab" onclick="switchTab('finance')">Finance</button>
-  <button class="tab" onclick="switchTab('electricity')">⚡ Electricity</button>
-  <button class="tab" onclick="switchTab('expenses')">🧾 Expenses</button>
-  <button class="tab" onclick="switchTab('pnl')">📊 P&amp;L</button>
-  <button class="tab" onclick="switchTab('maintenance')">🔧 Maintenance</button>
+  <button class="tab active" onclick="switchTab('home')">🏠 Home</button>
+  <button class="tab" onclick="switchTab('tenants')">👥 Tenants</button>
+  <button class="tab" onclick="switchTab('finance')">💰 Finance</button>
+  <button class="tab" onclick="switchTab('utilities')">⚡ Utilities</button>
   <button class="tab" onclick="switchTab('settings')">⚙ Settings</button>
 </div>
 
 <!-- Bottom nav — mobile only -->
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bottom-nav-btn active" onclick="switchTab('overview');setBottomNav(this)">
-    <span class="nav-icon">🏠</span><span>Overview</span>
+  <button class="bottom-nav-btn active" onclick="switchTab('home');setBottomNav(this)">
+    <span class="nav-icon">🏠</span><span>Home</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('tenants');setBottomNav(this)">
     <span class="nav-icon">👥</span><span>Tenants</span>
@@ -1483,17 +1568,8 @@
   <button class="bottom-nav-btn" onclick="switchTab('finance');setBottomNav(this)">
     <span class="nav-icon">💰</span><span>Finance</span>
   </button>
-  <button class="bottom-nav-btn" onclick="switchTab('electricity');setBottomNav(this)">
-    <span class="nav-icon">⚡</span><span>Electric</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchTab('expenses');setBottomNav(this)">
-    <span class="nav-icon">🧾</span><span>Expenses</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchTab('pnl');setBottomNav(this)">
-    <span class="nav-icon">📊</span><span>P&amp;L</span>
-  </button>
-  <button class="bottom-nav-btn" onclick="switchTab('maintenance');setBottomNav(this)">
-    <span class="nav-icon">🔧</span><span>Issues</span>
+  <button class="bottom-nav-btn" onclick="switchTab('utilities');setBottomNav(this)">
+    <span class="nav-icon">⚡</span><span>Utilities</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('settings');setBottomNav(this)">
     <span class="nav-icon">⚙</span><span>Settings</span>
@@ -1502,9 +1578,23 @@
 
 <main>
   <!-- OVERVIEW -->
-  <div class="section active" id="sec-overview">
+  <div class="section active" id="sec-home">
     <!-- Smart Dashboard strip -->
     <div id="dashboard-strip" style="margin-bottom:24px"></div>
+    <!-- Floor selector -->
+    <div id="floor-selector" style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="floor-btn active" onclick="selectFloor('all', this)">All Floors</button>
+      <button class="floor-btn" onclick="selectFloor(0, this)">Ground</button>
+      <button class="floor-btn" onclick="selectFloor(1, this)">First</button>
+      <button class="floor-btn" onclick="selectFloor(2, this)">Second</button>
+      <!-- Mobile dropdown (hidden on desktop) -->
+      <select id="floor-dropdown" class="floor-dropdown" onchange="selectFloor(this.value==='all'?'all':parseInt(this.value))">
+        <option value="all">All Floors</option>
+        <option value="0">Ground Floor</option>
+        <option value="1">First Floor</option>
+        <option value="2">Second Floor</option>
+      </select>
+    </div>
     <div class="floors" id="floors-container"></div>
   </div>
 
@@ -1543,6 +1633,29 @@
 
   <!-- FINANCE -->
   <div class="section" id="sec-finance">
+    <!-- P&L Summary Tile -->
+    <div id="pnl-summary-tile" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="flex:1;min-width:140px;background:linear-gradient(135deg,rgba(61,220,132,0.1),rgba(61,220,132,0.03));border:1px solid rgba(61,220,132,0.25);border-radius:12px;padding:14px 18px">
+        <div style="font-size:0.68rem;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Income</div>
+        <div id="pnl-tile-income" style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--green)">₹0</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:linear-gradient(135deg,rgba(255,71,87,0.1),rgba(255,71,87,0.03));border:1px solid rgba(255,71,87,0.25);border-radius:12px;padding:14px 18px">
+        <div style="font-size:0.68rem;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Expenses</div>
+        <div id="pnl-tile-outgoing" style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--red)">₹0</div>
+      </div>
+      <div style="flex:1;min-width:140px;background:linear-gradient(135deg,rgba(245,200,66,0.1),rgba(245,200,66,0.03));border:1px solid rgba(245,200,66,0.25);border-radius:12px;padding:14px 18px">
+        <div style="font-size:0.68rem;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Net Profit</div>
+        <div id="pnl-tile-net" style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--accent)">₹0</div>
+      </div>
+    </div>
+    <!-- Sub-tabs -->
+    <div class="sub-tabs" style="display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border-radius:10px;padding:4px;border:1px solid var(--border)">
+      <button class="sub-tab active" onclick="switchFinanceSub('rent')">💰 Rent</button>
+      <button class="sub-tab" onclick="switchFinanceSub('expenses')">🧾 Expenses</button>
+      <button class="sub-tab" onclick="switchFinanceSub('pnl')">📊 P&L</button>
+    </div>
+    <!-- Rent sub-section -->
+    <div id="finance-sub-rent" class="finance-sub active">
     <!-- KPI row -->
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
@@ -1603,7 +1716,9 @@
   </div>
 
   <!-- EXPENSES -->
-  <div class="section" id="sec-expenses">
+    </div>
+    <!-- Expenses sub-section -->
+    <div id="finance-sub-expenses" class="finance-sub" style="display:none">
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
         <div class="kpi-label">This Month Expenses</div>
@@ -1669,43 +1784,9 @@
   </div>
 
   <!-- ELECTRICITY -->
-  <div class="section" id="sec-electricity">
-    <!-- Rate editor bar -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span style="font-size:0.72rem;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase">⚡ Rate per Unit</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="color:var(--text2)">₹</span>
-        <input id="rate-input" type="number" min="1" step="0.5" value="13" class="form-input" style="width:90px;padding:6px 10px;font-size:0.9rem">
-        <span style="font-size:0.72rem;color:var(--muted)">/unit</span>
-      </div>
-      <button class="btn btn-primary" onclick="updateRate()" style="padding:6px 14px;font-size:0.75rem">Apply</button>
-      <span style="font-size:0.68rem;color:var(--muted)">Type new rate, then click Apply</span>
     </div>
-    <!-- Rate change history -->
-    <div id="rate-history-strip" style="margin-bottom:20px"></div>
-    <div class="kpi-grid" style="margin-bottom:20px">
-      <div class="kpi-card">
-        <div class="kpi-label">Current Rate</div>
-        <div class="kpi-value yellow" id="e-rate-display">₹13/unit</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Bill (All Floors)</div>
-        <div class="kpi-value" id="e-total-bill">₹0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Total Units (All Floors)</div>
-        <div class="kpi-value" id="e-total-units">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Unaccounted Units</div>
-        <div class="kpi-value red" id="e-diff-units">0</div>
-      </div>
-    </div>
-    <div id="meter-cards"></div>
-  </div>
-
-  <!-- P&L -->
-  <div class="section" id="sec-pnl">
+    <!-- P&L sub-section -->
+    <div id="finance-sub-pnl" class="finance-sub" style="display:none">
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
         <div class="kpi-label">Total Income</div>
@@ -1760,7 +1841,55 @@
   </div>
 
   <!-- MAINTENANCE -->
-  <div class="section" id="sec-maintenance">
+    </div>
+  </div>
+
+  <div class="section" id="sec-utilities">
+    <!-- Sub-tabs -->
+    <div class="sub-tabs" style="display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border-radius:10px;padding:4px;border:1px solid var(--border)">
+      <button class="sub-tab active" onclick="switchUtilitiesSub('electricity')">⚡ Electricity</button>
+      <button class="sub-tab" onclick="switchUtilitiesSub('maintenance')">🔧 Maintenance</button>
+    </div>
+    <!-- Electricity sub-section -->
+    <div id="utilities-sub-electricity" class="utilities-sub active">
+    <!-- Rate editor bar -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-size:0.72rem;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase">⚡ Rate per Unit</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="color:var(--text2)">₹</span>
+        <input id="rate-input" type="number" min="1" step="0.5" value="13" class="form-input" style="width:90px;padding:6px 10px;font-size:0.9rem">
+        <span style="font-size:0.72rem;color:var(--muted)">/unit</span>
+      </div>
+      <button class="btn btn-primary" onclick="updateRate()" style="padding:6px 14px;font-size:0.75rem">Apply</button>
+      <span style="font-size:0.68rem;color:var(--muted)">Type new rate, then click Apply</span>
+    </div>
+    <!-- Rate change history -->
+    <div id="rate-history-strip" style="margin-bottom:20px"></div>
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi-card">
+        <div class="kpi-label">Current Rate</div>
+        <div class="kpi-value yellow" id="e-rate-display">₹13/unit</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Bill (All Floors)</div>
+        <div class="kpi-value" id="e-total-bill">₹0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Units (All Floors)</div>
+        <div class="kpi-value" id="e-total-units">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Unaccounted Units</div>
+        <div class="kpi-value red" id="e-diff-units">0</div>
+      </div>
+    </div>
+    <div id="meter-cards"></div>
+  </div>
+
+  <!-- P&L -->
+    </div>
+    <!-- Maintenance sub-section -->
+    <div id="utilities-sub-maintenance" class="utilities-sub" style="display:none">
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card"><div class="kpi-label">Open Issues</div><div class="kpi-value red" id="maint-open">0</div></div>
       <div class="kpi-card"><div class="kpi-label">Total Logged</div><div class="kpi-value" id="maint-total">0</div></div>
@@ -1782,7 +1911,10 @@
   </div>
 
   <!-- SETTINGS -->
-  <div class="section" id="sec-settings">
+    </div>
+  </div>
+
+    <div class="section" id="sec-settings">
     <div style="max-width:600px">
       <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:20px">⚙ PG Settings</div>
 
@@ -2281,7 +2413,7 @@ function escapeHtml(s) {
 function showToast(msg, type = 'info') {
   const el = document.createElement('div');
   const bg = type === 'error' ? 'rgba(255,71,87,0.95)' : type === 'success' ? 'rgba(61,220,132,0.95)' : 'rgba(30,32,41,0.97)';
-  el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:10px 20px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;pointer-events:none`;
+  el.style.cssText = `position:fixed;top:80px;left:50%;transform:translateX(-50%);background:${bg};color:#fff;padding:10px 20px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.78rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:90vw;text-align:center;pointer-events:none`;
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3500);
@@ -2371,22 +2503,89 @@ function setBottomNav(el) {
 }
 
 function switchTab(name) {
-  // debug removed
+  // Map old names to new for backward compatibility
+  const nameMap = { 'overview': 'home', 'electricity': 'utilities', 'expenses': 'finance', 'pnl': 'finance', 'maintenance': 'utilities' };
+  const actualTab = nameMap[name] || name;
+
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['overview','tenants','finance','electricity','expenses','pnl','maintenance','settings'][i] === name);
+    t.classList.toggle('active', ['home','tenants','finance','utilities','settings'][i] === actualTab);
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  const secEl = document.getElementById('sec-' + name);
-  if (!secEl) { console.error('[PGHub] section not found: sec-' + name); return; }
+  const secEl = document.getElementById('sec-' + actualTab);
+  if (!secEl) { console.error('[PGHub] section not found: sec-' + actualTab); return; }
   secEl.classList.add('active');
-  if (name === 'overview')     renderOverview();
-  if (name === 'tenants')      renderTenantsTable();
-  if (name === 'finance')      renderFinance();
-  if (name === 'electricity')  renderMeterCards();
-  if (name === 'expenses')     renderExpensesTab();
-  if (name === 'pnl')          renderPnL();
-  if (name === 'settings')     loadSettings();
-  if (name === 'maintenance')  renderMaintenanceTab();
+
+  // Render content
+  if (actualTab === 'home')      renderOverview();
+  if (actualTab === 'tenants')   renderTenantsTable();
+  if (actualTab === 'finance')   { renderFinance(); renderExpensesTab(); renderPnL(); updatePnLTile(); }
+  if (actualTab === 'utilities') { renderMeterCards(); renderMaintenanceTab(); }
+  if (actualTab === 'settings')  loadSettings();
+
+  // If switching to a combined tab via old name, auto-select the right sub-tab
+  if (name === 'expenses') switchFinanceSub('expenses');
+  if (name === 'pnl') switchFinanceSub('pnl');
+  if (name === 'maintenance') switchUtilitiesSub('maintenance');
+  if (name === 'electricity') switchUtilitiesSub('electricity');
+}
+
+// ─── Sub-tab switching ────────────────────────────────────────────────────────
+
+function switchFinanceSub(sub) {
+  document.querySelectorAll('.finance-sub').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('#sec-finance .sub-tab').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById('finance-sub-' + sub);
+  if (target) target.style.display = '';
+  // Highlight the active sub-tab
+  const idx = { rent: 0, expenses: 1, pnl: 2 }[sub] || 0;
+  const tabs = document.querySelectorAll('#sec-finance .sub-tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  // Render the relevant section
+  if (sub === 'rent') renderFinance();
+  if (sub === 'expenses') renderExpensesTab();
+  if (sub === 'pnl') renderPnL();
+}
+
+function switchUtilitiesSub(sub) {
+  document.querySelectorAll('.utilities-sub').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('#sec-utilities .sub-tab').forEach(t => t.classList.remove('active'));
+  const target = document.getElementById('utilities-sub-' + sub);
+  if (target) target.style.display = '';
+  const idx = { electricity: 0, maintenance: 1 }[sub] || 0;
+  const tabs = document.querySelectorAll('#sec-utilities .sub-tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  if (sub === 'electricity') renderMeterCards();
+  if (sub === 'maintenance') renderMaintenanceTab();
+}
+
+// ─── P&L Summary Tile (shown at top of Finance tab) ──────────────────────────
+
+function updatePnLTile() {
+  const txns = buildPnLTransactions();
+  const income = txns.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+  const outgoing = txns.filter(t => t.type !== 'income').reduce((a, t) => a + t.amount, 0);
+  const net = income - outgoing;
+  const el1 = document.getElementById('pnl-tile-income');
+  const el2 = document.getElementById('pnl-tile-outgoing');
+  const el3 = document.getElementById('pnl-tile-net');
+  if (el1) el1.textContent = fmt(income);
+  if (el2) el2.textContent = fmt(outgoing);
+  if (el3) { el3.textContent = fmt(net); el3.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+}
+
+// ─── Floor Selector ──────────────────────────────────────────────────────────
+
+let _selectedFloor = 'all';
+
+function selectFloor(floorId, btnEl) {
+  _selectedFloor = floorId;
+  // Update button states (desktop)
+  document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  // Update dropdown (mobile)
+  const dd = document.getElementById('floor-dropdown');
+  if (dd) dd.value = String(floorId);
+  renderOverview();
 }
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
@@ -2398,7 +2597,8 @@ function renderOverview() {
   container.innerHTML = '';
   // debug removed
 
-  FLOORS.forEach(floor => {
+  const floorsToShow = _selectedFloor === 'all' ? FLOORS : FLOORS.filter(f => f.id === _selectedFloor);
+  floorsToShow.forEach(floor => {
     const section = document.createElement('div');
     section.innerHTML = `<div class="floor-label">${floor.name}</div>`;
 
@@ -4828,7 +5028,7 @@ function _initApp() {
 
   window._allDataLoaded = true;
   updateRoomOptions();
-  switchTab('overview');
+  switchTab('home');
   // debug removed
 }
 
