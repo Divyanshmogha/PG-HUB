@@ -263,7 +263,60 @@
   } // end loadFirebaseData
 </script>
 
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* iOS-style tab icons as inline SVG background images */
+  .icon-home, .icon-users, .icon-wallet, .icon-bolt, .icon-settings {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  .icon-home { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l-2 0l9 -9l9 9l-2 0'/%3E%3Cpath d='M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7'/%3E%3Cpath d='M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6'/%3E%3C/svg%3E"); }
+  .icon-users { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0'/%3E%3Cpath d='M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2'/%3E%3Cpath d='M16 3.13a4 4 0 0 1 0 7.75'/%3E%3Cpath d='M21 21v-2a4 4 0 0 0 -3 -3.85'/%3E%3C/svg%3E"); }
+  .icon-wallet { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12'/%3E%3Cpath d='M20 12v4h-4a2 2 0 0 1 0 -4h4'/%3E%3C/svg%3E"); }
+  .icon-bolt { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11'/%3E%3C/svg%3E"); }
+  .icon-settings { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z'/%3E%3Cpath d='M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0'/%3E%3C/svg%3E"); }
+
+  /* Color inheritance for dark/light mode */
+  .icon-home, .icon-users, .icon-wallet, .icon-bolt, .icon-settings {
+    filter: brightness(0) invert(0.55);
+  }
+  .bottom-nav-btn.active .icon-home,
+  .bottom-nav-btn.active .icon-users,
+  .bottom-nav-btn.active .icon-wallet,
+  .bottom-nav-btn.active .icon-bolt,
+  .bottom-nav-btn.active .icon-settings,
+  .tab.active .icon-home,
+  .tab.active .icon-users,
+  .tab.active .icon-wallet,
+  .tab.active .icon-bolt,
+  .tab.active .icon-settings {
+    filter: brightness(0) saturate(100%) invert(37%) sepia(95%) saturate(2000%) hue-rotate(200deg) brightness(100%) contrast(105%);
+  }
+  [data-theme="light"] .icon-home,
+  [data-theme="light"] .icon-users,
+  [data-theme="light"] .icon-wallet,
+  [data-theme="light"] .icon-bolt,
+  [data-theme="light"] .icon-settings {
+    filter: brightness(0) invert(0.4);
+  }
+  [data-theme="light"] .bottom-nav-btn.active .icon-home,
+  [data-theme="light"] .bottom-nav-btn.active .icon-users,
+  [data-theme="light"] .bottom-nav-btn.active .icon-wallet,
+  [data-theme="light"] .bottom-nav-btn.active .icon-bolt,
+  [data-theme="light"] .bottom-nav-btn.active .icon-settings,
+  [data-theme="light"] .tab.active .icon-home,
+  [data-theme="light"] .tab.active .icon-users,
+  [data-theme="light"] .tab.active .icon-wallet,
+  [data-theme="light"] .tab.active .icon-bolt,
+  [data-theme="light"] .tab.active .icon-settings {
+    filter: brightness(0) saturate(100%) invert(37%) sepia(95%) saturate(2000%) hue-rotate(200deg) brightness(100%) contrast(105%);
+  }
+</style>
 <style>
   :root {
     --bg: #000000;
@@ -790,7 +843,7 @@
       transition: color 0.2s;
       min-height: 56px;
     }
-    .bottom-nav-btn .nav-icon { font-size: 1.2rem; line-height: 1; }
+    .bottom-nav-btn .nav-icon { font-size: 1.4rem; line-height: 1; }
     .bottom-nav-btn.active { color: var(--accent); }
     .bottom-nav-btn.active .nav-dot {
       width: 4px; height: 4px; border-radius: 50%;
@@ -1170,7 +1223,7 @@
     box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   }
 
-  /* ── v17.4 COSMETIC IMPROVEMENTS ───────────────────────────────────────────── */
+  /* ── V17 COSMETIC IMPROVEMENTS ───────────────────────────────────────────── */
   /* Smoother transitions */
   .section { transition: opacity 0.2s ease; }
   .room-card, .kpi-card, .table-wrap, .toolbar {
@@ -1217,46 +1270,47 @@
   [data-theme="light"] {
     --bg:        #f2f2f7;
     --surface:   #ffffff;
-    --surface2:  #f2f2f7;
-    --border:    rgba(0,0,0,0.08);
-    --border2:   rgba(0,0,0,0.12);
+    --surface2:  #e5e5ea;
+    --border:    rgba(0,0,0,0.06);
+    --border2:   rgba(0,0,0,0.1);
     --text:      #1c1c1e;
-    --text2:     #3a3a3c;
+    --text2:     #48484a;
     --muted:     #8e8e93;
     --accent:    #007aff;
     --accent2:   #0056b3;
     --green:     #34c759;
     --red:       #ff3b30;
     --blue:      #007aff;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow:    0 4px 12px rgba(0,0,0,0.06);
-    --shadow-lg: 0 14px 40px rgba(0,0,0,0.1);
+    --shadow-sm: 0 0.5px 1px rgba(0,0,0,0.04);
+    --shadow:    0 2px 8px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.06);
   }
 
   [data-theme="light"] body {
-    background: var(--bg);
+    background: #f2f2f7;
   }
   [data-theme="light"] header {
-    background: rgba(255,255,255,0.72);
+    background: rgba(242,242,247,0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid rgba(0,0,0,0.06);
     border-bottom: 0.5px solid rgba(0,0,0,0.08);
   }
   [data-theme="light"] .room-card,
   [data-theme="light"] .kpi-card,
   [data-theme="light"] .washroom-card,
-  [data-theme="light"] .table-wrap { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-  [data-theme="light"] .tenant-chip { background: var(--surface2); }
-  [data-theme="light"] tr:hover td { background: rgba(0,0,0,0.02); }
-  [data-theme="light"] .modal-overlay { background: rgba(0,0,0,0.3); }
+  [data-theme="light"] .table-wrap { background: #fff; box-shadow: 0 0.5px 2px rgba(0,0,0,0.03); }
+  [data-theme="light"] .tenant-chip { background: #f2f2f7; }
+  [data-theme="light"] tr:hover td { background: rgba(0,0,0,0.015); }
+  [data-theme="light"] .modal-overlay { background: rgba(0,0,0,0.25); }
   [data-theme="light"] .modal { background: #fff; }
   [data-theme="light"] .btn-primary { background: #007aff; color: #fff; border-color: #007aff; }
   [data-theme="light"] .btn-primary:hover { background: #0056b3; }
   [data-theme="light"] .bottom-nav {
-    background: rgba(255,255,255,0.72);
+    background: rgba(242,242,247,0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-top: 0.5px solid rgba(0,0,0,0.08);
+    border-top: 0.5px solid rgba(0,0,0,0.06);
   }
   [data-theme="light"] .signout-btn {
     background: rgba(255,59,48,0.08);
@@ -1535,7 +1589,6 @@
   <div class="header-stats">
     <div class="stat" onclick="switchTab('tenants')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Tenants"><strong id="h-total">0</strong>Tenants</div>
     <div class="stat" onclick="switchTab('home')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Overview"><strong id="h-occupied">0/12</strong>Beds</div>
-    <div class="stat" onclick="switchTab('finance')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Finance"><strong id="h-due">₹0</strong>Rent Due</div>
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme" class="theme-toggle">
       <span class="theme-toggle-track"><span class="theme-toggle-thumb"></span></span>
       <span class="theme-toggle-icon sun">☀</span>
@@ -1547,29 +1600,29 @@
 </header>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('home')">🏠 Home</button>
-  <button class="tab" onclick="switchTab('tenants')">👥 Tenants</button>
-  <button class="tab" onclick="switchTab('finance')">💰 Finance</button>
-  <button class="tab" onclick="switchTab('utilities')">⚡ Utilities</button>
-  <button class="tab" onclick="switchTab('settings')">⚙ Settings</button>
+  <button class="tab active" onclick="switchTab('home')"><span class="icon-home"></span> Home</button>
+  <button class="tab" onclick="switchTab('tenants')"><span class="icon-users"></span> Tenants</button>
+  <button class="tab" onclick="switchTab('finance')"><span class="icon-wallet"></span> Finance</button>
+  <button class="tab" onclick="switchTab('utilities')"><span class="icon-bolt"></span> Utilities</button>
+  <button class="tab" onclick="switchTab('settings')"><span class="icon-settings"></span> Settings</button>
 </div>
 
 <!-- Bottom nav — mobile only -->
 <nav class="bottom-nav" id="bottom-nav">
   <button class="bottom-nav-btn active" onclick="switchTab('home');setBottomNav(this)">
-    <span class="nav-icon">🏠</span><span>Home</span>
+    <span class="nav-icon"><span class="icon-home"></span></span><span>Home</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('tenants');setBottomNav(this)">
-    <span class="nav-icon">👥</span><span>Tenants</span>
+    <span class="nav-icon"><span class="icon-users"></span></span><span>Tenants</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('finance');setBottomNav(this)">
-    <span class="nav-icon">💰</span><span>Finance</span>
+    <span class="nav-icon"><span class="icon-wallet"></span></span><span>Finance</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('utilities');setBottomNav(this)">
-    <span class="nav-icon">⚡</span><span>Utilities</span>
+    <span class="nav-icon"><span class="icon-bolt"></span></span><span>Utilities</span>
   </button>
   <button class="bottom-nav-btn" onclick="switchTab('settings');setBottomNav(this)">
-    <span class="nav-icon">⚙</span><span>Settings</span>
+    <span class="nav-icon"><span class="icon-settings"></span></span><span>Settings</span>
   </button>
 </nav>
 
@@ -2719,11 +2772,8 @@ function updateHeaderStats() {
   const pgTenants = tenants.filter(t => !t.archivedAt);
   const total = pgTenants.length;
   const totalBeds = FLOORS.reduce((a, f) => a + f.rooms.reduce((b, r) => b + r.capacity, 0), 0);
-  const nowKey = monthKey(new Date().getFullYear(), new Date().getMonth());
-  const due = pgTenants.filter(t => { const r = getRentRecord(t, nowKey); return !r || !r.paid; }).reduce((a, t) => a + Number(t.rent || 0), 0);
   document.getElementById('h-total').textContent = total;
   document.getElementById('h-occupied').textContent = `${total}/${totalBeds}`;
-  document.getElementById('h-due').textContent = fmt(due);
 }
 
 // ─── TENANTS TABLE ────────────────────────────────────────────────────────────
@@ -5510,32 +5560,25 @@ function renderDashboard() {
     <div style="margin-bottom:8px;font-size:0.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px">
       <span>📅 ${now.toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</span>
     </div>
-    <div class="kpi-grid" style="margin-bottom:16px">
-      <div class="kpi-card">
-        <div class="kpi-label">Collected / Expected (${label.split(' ')[0]})</div>
-        <div class="kpi-value green">${fmt(collected)} <span style="font-size:0.7rem;color:var(--text2);font-weight:400">/ ${fmt(expected)}</span></div>
+    <div class="kpi-grid" style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="kpi-card" onclick="switchTab('finance')" style="cursor:pointer">
+        <div class="kpi-label">Collected (${label.split(' ')[0]})</div>
+        <div class="kpi-value green">${fmt(collected)}</div>
+        <div style="font-size:0.68rem;color:var(--text2);margin-top:4px">of ${fmt(expected)} expected</div>
         <div style="margin-top:6px;background:var(--border);border-radius:4px;height:4px;overflow:hidden">
           <div style="height:4px;background:var(--green);width:${expected > 0 ? Math.min(100, Math.round(collected/expected*100)) : 0}%;transition:width 0.5s"></div>
         </div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Still Pending</div>
+      <div class="kpi-card" onclick="switchTab('finance')" style="cursor:pointer">
+        <div class="kpi-label">Pending</div>
         <div class="kpi-value ${pending > 0 ? 'red' : 'green'}">${pending > 0 ? fmt(pending) : '✓ All clear'}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Overdue Tenants</div>
-        <div class="kpi-value ${overdue.length > 0 ? 'red' : 'green'}" style="font-size:${overdue.length > 0 ? '1rem' : '1.4rem'}">${overdue.length > 0 ? overdue.map(t => `<span title="${fmt(t.rent)} due">${escapeHtml(t.name.split(' ')[0])}</span>`).join(', ') : '✓ None'}</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Occupancy</div>
-        <div class="kpi-value yellow">${activeTenants.length} <span style="font-size:0.7rem;color:var(--text2);font-weight:400">/ ${FLOORS.reduce((a,f)=>a+f.rooms.reduce((b,r)=>b+r.capacity,0),0)} beds</span></div>
+        ${overdue.length > 0
+          ? `<div style="font-size:0.68rem;color:var(--red);margin-top:4px">${overdue.length} overdue: ${overdue.map(t => escapeHtml(t.name.split(' ')[0])).join(', ')}</div>`
+          : `<div style="font-size:0.68rem;color:var(--green);margin-top:4px">No overdue tenants</div>`
+        }
       </div>
     </div>
-    ${overdue.length > 0 ? `<div style="background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:0.78rem;color:var(--red);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <span>⚠ <strong>${overdue.length} overdue:</strong> ${overdue.map(t=>t.name.split(' ')[0]).join(', ')}</span>
-      <button class="action-btn" onclick="switchTab('finance')" style="color:var(--red);border-color:var(--red);margin-left:auto">View Finance →</button>
-    </div>` : ''}
-    ${meterAlerts.length > 0 ? `<div style="background:rgba(90,141,238,0.08);border:1px solid rgba(90,141,238,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:0.78rem;color:var(--blue)">
+    ${meterAlerts.length > 0 ? `<div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.25);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:0.78rem;color:var(--blue)">
       📡 Meter readings may be overdue for: ${meterAlerts.join(', ')} — last reading older than 30 days
     </div>` : ''}`;
 }
