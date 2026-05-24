@@ -854,7 +854,7 @@
   /* Touch-friendly scrollable table on mobile */
   @media (max-width: 768px) {
     .table-wrap { border-radius: 10px; }
-    .table-wrap table { min-width: 520px; }
+    .table-wrap table { min-width: 100%; }
   }
 
   /* Keep desktop tabs */
@@ -1238,9 +1238,56 @@
   /* More whitespace between sections */
   .kpi-grid { gap: 14px; }
   .toolbar { margin-bottom: 18px; }
-  .table-wrap { border-radius: 12px; overflow: hidden; }
+  .table-wrap { border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* Toast at top instead of bottom */
+
+  /* ── MOBILE RESPONSIVE FIXES ──────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    /* Tables scroll horizontally */
+    .table-wrap { -webkit-overflow-scrolling: touch; overflow-x: auto; }
+    .table-wrap table { min-width: 580px; font-size: 0.72rem; }
+    .table-wrap td, .table-wrap th { padding: 8px 6px; }
+
+    /* Header compact */
+    header { padding: 10px 14px; }
+    .logo { font-size: 1.1rem; }
+    .header-stats { gap: 10px; }
+    .header-stats .stat { font-size: 0.65rem; }
+    .header-stats .stat strong { font-size: 0.85rem; }
+    .signout-btn { padding: 5px 10px; font-size: 0.65rem; }
+
+    /* Sub-tabs compact */
+    .sub-tabs { gap: 2px; padding: 3px; }
+    .sub-tab { padding: 8px 10px; font-size: 0.75rem; }
+
+    /* Floor selector compact */
+    .floor-seg { padding: 6px 8px; font-size: 0.75rem; }
+
+    /* KPI cards */
+    .kpi-card { padding: 12px; }
+    .kpi-label { font-size: 0.65rem; }
+    .kpi-value { font-size: 1.2rem; }
+
+    /* Room cards */
+    .room-card { padding: 14px; }
+    .room-number { font-size: 0.95rem; }
+    .tenant-chip { padding: 8px; gap: 8px; }
+    .tenant-name { font-size: 0.8rem; }
+    .tenant-rent { font-size: 0.65rem; }
+
+    /* Action buttons */
+    .action-btn { padding: 6px 8px; font-size: 0.68rem; }
+
+    /* Modals */
+    .modal { max-width: 100%; margin: 0; border-radius: 16px 16px 0 0; }
+
+    /* Finance month nav */
+    .toolbar { flex-wrap: wrap; gap: 8px; }
+
+    /* Meter cards */
+    .meter-card { padding: 12px; }
+  }
 
   /* ── GLOBAL FONT CONSISTENCY ─── */
   /* Inter for everything except login screen (DM Mono) and headings (Syne) */
@@ -1260,7 +1307,7 @@
 </style>
 <!-- SheetJS for .xlsx exports -->
 <!-- Content Security Policy -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https: wss:; img-src 'self' data: blob: https:; media-src 'self' blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://cdnjs.cloudflare.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://generativelanguage.googleapis.com wss://*.firebaseio.com; img-src 'self' data: blob: https:; media-src 'self' blob:;">
 <!-- SheetJS for .xlsx exports (with SRI) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.1/xlsx.full.min.js" integrity="sha384-rRoXxn2yHlrZYB587Ki9RO1tONhLdM6XfORg7Rw4uwH4/Fh/5nP7IUX91bkaKUgs" crossorigin="anonymous"></script>
 <style id="ui-theme-and-flair">
@@ -1677,7 +1724,7 @@
   <!-- FINANCE -->
   <div class="section" id="sec-finance">
     <!-- P&L Summary Tile -->
-    <div id="pnl-summary-tile" style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <div id="pnl-summary-tile" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px">
       <div style="flex:1;min-width:140px;background:linear-gradient(135deg,rgba(61,220,132,0.1),rgba(61,220,132,0.03));border:1px solid rgba(61,220,132,0.25);border-radius:12px;padding:14px 18px">
         <div style="font-size:0.68rem;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Income</div>
         <div id="pnl-tile-income" style="font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;font-size:1.4rem;font-weight:800;color:var(--green)">₹0</div>
@@ -1896,7 +1943,7 @@
     <!-- Electricity sub-section -->
     <div id="utilities-sub-electricity" class="utilities-sub active">
     <!-- Rate editor bar -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="font-size:0.72rem;color:var(--text2);letter-spacing:0.5px;text-transform:uppercase">⚡ Rate per Unit</span>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:var(--text2)">₹</span>
@@ -2724,7 +2771,7 @@ function renderOverview() {
       const archivedInRoom = archivedTenantsInRoom(room.id);
       card.innerHTML = `
         <div class="room-header" onclick="openRoomDetail('${room.id}')" style="cursor:pointer">
-          <div class="room-number">Room ${room.name}</div>
+          <div class="room-number">Room ${escapeHtml(room.name)}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end">
             <span class="room-tag ${room.washroom === 'attached' ? 'attached' : ''}">${room.washroom === 'attached' ? '🚿 Attached' : '🚿 Common'}</span>
             ${room.balcony ? '<span class="room-tag" style="background:rgba(61,220,132,0.12);color:#3ddc84">🌿 Balcony</span>' : ''}
@@ -3075,7 +3122,7 @@ function openRentHistory(tenantId) {
         ${rec && rec.paid ? `
           <div style="flex:1;font-size:0.75rem;color:var(--text2)">
             <span style="color:var(--green);font-weight:600">${fmt(rec.amount)}</span>
-            · ${rec.date} · <span style="color:var(--blue)">${rec.mode}</span>
+            · ${rec.date} · <span style="color:var(--blue)">${escapeHtml(rec.mode||"")}</span>
             ${rec.note ? `· <span style="color:var(--text2)">${escapeHtml(rec.note||"")}</span>` : ''}
           </div>
           <button class="action-btn del" onclick="unmarkRentPaid('${t.id}','${key}');openRentHistory('${t.id}')">Undo</button>
@@ -3206,12 +3253,24 @@ function viewExistingId(event) {
 }
 
 function openIdViewer(idDoc) {
-  const win = window.open('', '_blank', 'noopener,noreferrer');
+  if (!idDoc || !idDoc.data) { showToast('No ID document found', 'info'); return; }
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px';
+  overlay.onclick = (e) => { if (e.target === overlay || e.target.tagName === 'P') overlay.remove(); };
   if (idDoc.type === 'application/pdf') {
-    win.document.write(`<iframe src="${idDoc.data}" style="width:100%;height:100vh;border:none"></iframe>`);
+    overlay.innerHTML = `
+      <iframe src="${idDoc.data}" style="width:95%;max-width:800px;height:85vh;border:none;border-radius:8px;background:#fff"></iframe>
+      <p style="font-family:-apple-system,system-ui,sans-serif;color:#fff;padding:12px;font-size:0.8rem;text-align:center">
+        ${escapeHtml(idDoc.name || 'PDF Document')}<br><span style="font-size:0.65rem;color:#888">Tap outside to close</span>
+      </p>`;
   } else {
-    win.document.write(`<img src="${idDoc.data}" style="max-width:100%;display:block;margin:auto"><p style="font-family:monospace;padding:10px;text-align:center">${idDoc.name}</p>`);
+    overlay.innerHTML = `
+      <img src="${idDoc.data}" style="max-width:95%;max-height:80vh;object-fit:contain;border-radius:8px">
+      <p style="font-family:-apple-system,system-ui,sans-serif;color:#fff;padding:12px;font-size:0.8rem;text-align:center">
+        ${escapeHtml(idDoc.name || 'ID Document')}<br><span style="font-size:0.65rem;color:#888">Tap anywhere to close</span>
+      </p>`;
   }
+  document.body.appendChild(overlay);
 }
 
 // ─── MODAL ────────────────────────────────────────────────────────────────────
@@ -3307,10 +3366,10 @@ function closeModal() {
 }
 
 async function saveTenant() {
-  const name        = escapeHtml(document.getElementById('f-name').value.trim());
+  const name        = document.getElementById('f-name').value.trim();
   const rent        = Number(document.getElementById('f-rent').value);
   const phone       = document.getElementById('f-phone').value.trim();
-  const parentName  = escapeHtml(document.getElementById('f-parent-name').value.trim());
+  const parentName  = document.getElementById('f-parent-name').value.trim();
   const parentPhone = document.getElementById('f-parent-phone').value.trim();
   const joinDate    = document.getElementById('f-date').value;
   const roomId      = document.getElementById('f-room').value;
@@ -3728,7 +3787,7 @@ function renderMeterCards() {
         </div>`).slice(0,3).join('');
 
       const gfCard = document.createElement('div');
-      gfCard.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px';
+      gfCard.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px';
       gfCard.innerHTML = `
         <!-- GF Electricity -->
         <div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:12px;padding:18px">
@@ -3843,7 +3902,7 @@ function renderMeterCards() {
 
     // Room meter cards
     const grid = document.createElement('div');
-    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;';
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;';
 
     floor.rooms.forEach(room => {
       const history = (meterReadings[room.id] || []).filter(h => h && h.date);
@@ -3878,7 +3937,7 @@ function renderMeterCards() {
       card.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
           <div>
-            <div style="font-family:-apple-system,system-ui,sans-serif;font-size:1.05rem;font-weight:800">Room ${room.name}</div>
+            <div style="font-family:-apple-system,system-ui,sans-serif;font-size:1.05rem;font-weight:800">Room ${escapeHtml(room.name)}</div>
             <div style="font-size:0.68rem;color:var(--muted);margin-top:2px">${room.washroom==='attached'?'Attached WR':'Common WR'}${room.balcony?' · Balcony':''}</div>
           </div>
           <button class="btn btn-primary" style="padding:7px 14px;font-size:0.72rem" onclick="openMeterModal('${room.id}')">+ Reading</button>
@@ -4456,7 +4515,7 @@ function renderExpensesTable() {
     return `<tr>
       <td style="white-space:nowrap">${e.date}</td>
       <td style="color:var(--text)">${escapeHtml(e.description||"")}</td>
-      <td><span class="badge" style="background:${color}22;color:${color}">${e.category}</span></td>
+      <td><span class="badge" style="background:${color}22;color:${color}">${escapeHtml(e.category||"")}</span></td>
       <td style="color:var(--accent);font-family:-apple-system,system-ui,sans-serif;font-weight:700">${fmt(e.amount)}</td>
       <td style="color:var(--muted);font-size:0.72rem">${escapeHtml(e.note||'—')}</td>
       <td>
@@ -5458,7 +5517,7 @@ function showReceiptModal(tenantId, key) {
       <div><span style="color:var(--text2)">Tenant</span><br><strong style="color:var(--text)">${escapeHtml(t.name)}</strong></div>
       <div><span style="color:var(--text2)">Room</span><br><strong style="color:var(--text)">Room ${room?.name || '?'}</strong></div>
       <div><span style="color:var(--text2)">Period</span><br><strong style="color:var(--text)">${monthLabel(y, m - 1)}</strong></div>
-      <div><span style="color:var(--text2)">Mode</span><br><strong style="color:var(--blue)">${rec.mode}</strong></div>
+      <div><span style="color:var(--text2)">Mode</span><br><strong style="color:var(--blue)">${escapeHtml(rec.mode||"")}</strong></div>
     </div>
     <div style="background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.25);border-radius:8px;padding:12px;text-align:center;margin-bottom:12px">
       <div style="font-size:0.7rem;color:var(--text2);margin-bottom:2px">AMOUNT RECEIVED</div>
@@ -5514,7 +5573,7 @@ function bulkMarkPaid() {
   const key = monthKey(_financeYear, _financeMonth);
   const unpaidTenants = tenants.filter(t => !t.archivedAt && rentStatus(t, key) !== 'paid');
   if (unpaidTenants.length === 0) { alert('All tenants are already marked paid for this month! 🎉'); return; }
-  if (!confirm(`Mark ${unpaidTenants.length} tenant(s) as Cash paid today for ${monthLabel(_financeYear, _financeMonth)}?\n\n${unpaidTenants.map(t=>t.name).join(', ')}`)) return;
+  if (!confirm(`Mark ${unpaidTenants.length} tenant(s) as Cash paid today for ${monthLabel(_financeYear, _financeMonth)}?\n\n${unpaidTenants.map(t=>escapeHtml(t.name)).join(', ')}`)) return;
   const today = new Date().toISOString().split('T')[0];
   unpaidTenants.forEach(t => {
     if (!t.rentHistory) t.rentHistory = {};
@@ -5560,7 +5619,7 @@ function renderDashboard() {
     <div style="margin-bottom:8px;font-size:0.68rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px">
       <span>📅 ${now.toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</span>
     </div>
-    <div class="kpi-grid" style="margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="kpi-grid" style="margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
       <div class="kpi-card" onclick="switchTab('finance')" style="cursor:pointer">
         <div class="kpi-label">Collected (${label.split(' ')[0]})</div>
         <div class="kpi-value green">${fmt(collected)}</div>
