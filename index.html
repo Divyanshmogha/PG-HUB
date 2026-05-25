@@ -1242,6 +1242,66 @@
 
   /* Toast at top instead of bottom */
 
+  
+  
+  /* ── TAB NOTIFICATION BADGES ─────────────────────────────────────────── */
+  .tab-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    background: var(--red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 600;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    line-height: 1;
+  }
+  .tab-badge-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #ff9f0a;
+    border-radius: 50%;
+  }
+  .bottom-nav-btn { position: relative; }
+  .nav-icon { position: relative; display: inline-block; }
+
+  /* ── EMPTY STATES ────────────────────────────────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.3;
+  }
+  .empty-state-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .empty-state-desc {
+    font-size: 0.82rem;
+    color: var(--text2);
+    margin-bottom: 16px;
+    max-width: 280px;
+  }
+
   /* ── MOBILE RESPONSIVE FIXES ──────────────────────────────────────────── */
   @media (max-width: 768px) {
     /* Tables scroll horizontally */
@@ -1287,6 +1347,65 @@
 
     /* Meter cards */
     .meter-card { padding: 12px; }
+  }
+
+  
+  
+  /* ── MOBILE CARD LAYOUT FOR FINANCE TABLE ────────────────────────────── */
+  @media (max-width: 768px) {
+    #universal-search-wrap { display: none; }
+    .table-wrap table thead { display: none; }
+    .table-wrap table, .table-wrap table tbody,
+    .table-wrap table tr, .table-wrap table td {
+      display: block;
+      width: 100%;
+    }
+    .table-wrap table tr {
+      padding: 12px;
+      margin-bottom: 8px;
+      border: 0.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      position: relative;
+    }
+    .table-wrap table td {
+      padding: 3px 0;
+      font-size: 0.78rem;
+      border: none;
+    }
+    .table-wrap table td:before {
+      content: attr(data-label);
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .table-wrap { overflow-x: visible; border: none; }
+    .table-wrap table { min-width: 100% !important; }
+  }
+
+  /* ── LIGHT THEME MOBILE REFINEMENT ───────────────────────────────────── */
+  @media (max-width: 768px) {
+    [data-theme="light"] header { padding: 10px 14px; }
+    [data-theme="light"] .room-card { box-shadow: 0 0.5px 2px rgba(0,0,0,0.03); }
+    [data-theme="light"] .kpi-card { box-shadow: 0 0.5px 1px rgba(0,0,0,0.02); }
+    [data-theme="light"] .sub-tabs { background: var(--surface2); }
+    [data-theme="light"] .form-input, [data-theme="light"] .form-select {
+      background: #fff;
+      border-color: rgba(0,0,0,0.08);
+    }
+    [data-theme="light"] .modal {
+      background: #f8f8fa;
+    }
+    [data-theme="light"] .btn-ghost {
+      border-color: rgba(0,0,0,0.1);
+    }
+    [data-theme="light"] #universal-search {
+      background: rgba(0,0,0,0.04);
+      border-color: rgba(0,0,0,0.06);
+    }
   }
 
   /* ── GLOBAL FONT CONSISTENCY ─── */
@@ -1633,6 +1752,11 @@
 
 <header>
   <div class="logo">PG<span>Hub</span></div>
+  <div id="universal-search-wrap" style="position:relative;flex:1;max-width:280px;margin:0 12px">
+    <input type="text" id="universal-search" placeholder="Search tenants, expenses..." oninput="handleUniversalSearch(this.value)" onfocus="document.getElementById('search-results').style.display='block'" style="width:100%;padding:7px 12px 7px 32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:-apple-system,system-ui,sans-serif;outline:none" onfocusin="this.style.borderColor='var(--accent)'" onfocusout="this.style.borderColor='var(--border)';setTimeout(()=>document.getElementById('search-results').style.display='none',200)">
+    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none">⌕</span>
+    <div id="search-results" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:300px;overflow-y:auto;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,0.3)"></div>
+  </div>
   <div class="header-stats">
     <div class="stat" onclick="switchTab('tenants')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Tenants"><strong id="h-total">0</strong>Tenants</div>
     <div class="stat" onclick="switchTab('home')" style="cursor:pointer;transition:opacity 0.15s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" title="Go to Overview"><strong id="h-occupied">0/12</strong>Beds</div>
@@ -1643,7 +1767,7 @@
     </button>
     <button onclick="doLogout()" title="Sign Out" class="signout-btn">⏻ Sign Out</button>
   </div>
-  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v17.0</div>
+  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v18.0</div>
 </header>
 
 <div class="tabs">
@@ -1678,6 +1802,7 @@
   <div class="section active" id="sec-home">
     <!-- Smart Dashboard strip -->
     <div id="dashboard-strip" style="margin-bottom:24px"></div>
+
     <!-- Floor selector — iOS segmented control -->
     <div id="floor-selector" style="display:flex;gap:4px;margin-bottom:20px;background:var(--surface2);border-radius:10px;padding:3px;border:0.5px solid var(--border)">
       <button class="floor-seg active" onclick="selectFloor('all', this)">All</button>
@@ -1809,6 +1934,7 @@
     </div>
     <!-- Expenses sub-section -->
     <div id="finance-sub-expenses" class="finance-sub" style="display:none">
+    <div id="expense-chart-wrap" style="margin-bottom:16px"></div>
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
         <div class="kpi-label">This Month Expenses</div>
@@ -1877,6 +2003,7 @@
     </div>
     <!-- P&L sub-section -->
     <div id="finance-sub-pnl" class="finance-sub" style="display:none">
+    <div id="income-chart-wrap" style="margin-bottom:16px"></div>
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi-card">
         <div class="kpi-label">Total Income</div>
@@ -2607,6 +2734,7 @@ function switchTab(name) {
 
   // Render content
   if (actualTab === 'home')      renderOverview();
+  updateTabBadges();
   if (actualTab === 'tenants')   renderTenantsTable();
   if (actualTab === 'finance')   { renderFinance(); renderExpensesTab(); renderPnL(); updatePnLTile(); }
   if (actualTab === 'utilities') { renderMeterCards(); renderMaintenanceTab(); }
@@ -2617,6 +2745,285 @@ function switchTab(name) {
   if (name === 'pnl') switchFinanceSub('pnl');
   if (name === 'maintenance') switchUtilitiesSub('maintenance');
   if (name === 'electricity') switchUtilitiesSub('electricity');
+}
+
+
+
+
+
+
+// ─── EXPENSE BREAKDOWN CHART ──────────────────────────────────────────────────
+
+function renderExpenseChart() {
+  const wrap = document.getElementById('expense-chart-wrap');
+  if (!wrap) return;
+  if (expenses.length === 0) { wrap.innerHTML = ''; return; }
+
+  // Group by category
+  const cats = {};
+  expenses.forEach(e => {
+    const cat = e.category || 'Other';
+    cats[cat] = (cats[cat] || 0) + Number(e.amount || 0);
+  });
+
+  const sorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
+  const total = sorted.reduce((a, [, v]) => a + v, 0);
+  const colors = ['#0a84ff', '#ff9f0a', '#30d158', '#bf5af2', '#ff453a', '#5ac8fa', '#ff375f', '#64d2ff'];
+
+  const bars = sorted.slice(0, 6).map(([cat, amt], i) => {
+    const pct = total > 0 ? Math.round(amt / total * 100) : 0;
+    return '<div style="margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:3px">' +
+      '<span style="color:var(--text)">' + escapeHtml(cat) + '</span>' +
+      '<span style="font-weight:600;color:var(--text)">' + fmt(amt) + '</span></div>' +
+      '<div style="height:6px;background:var(--surface2);border-radius:3px;overflow:hidden">' +
+      '<div style="height:6px;background:' + colors[i % colors.length] + ';width:' + pct + '%;border-radius:3px;transition:width 0.5s"></div></div></div>';
+  }).join('');
+
+  wrap.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">' +
+    '<div style="display:flex;justify-content:space-between;margin-bottom:12px">' +
+    '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Expense breakdown</span>' +
+    '<span style="font-size:0.68rem;color:var(--muted)">Total: ' + fmt(total) + '</span></div>' +
+    bars + '</div>';
+}
+
+// ─── UNIVERSAL SEARCH ─────────────────────────────────────────────────────────
+
+function handleUniversalSearch(query) {
+  const results = document.getElementById('search-results');
+  if (!results) return;
+  if (!query || query.length < 2) { results.innerHTML = ''; results.style.display = 'none'; return; }
+
+  const q = query.toLowerCase();
+  const matches = [];
+
+  // Search tenants
+  tenants.forEach(t => {
+    if (t.name?.toLowerCase().includes(q) || t.phone?.toLowerCase().includes(q)) {
+      const room = getRoomById(t.roomId);
+      matches.push({
+        type: 'Tenant',
+        icon: '👤',
+        title: escapeHtml(t.name),
+        sub: 'Room ' + escapeHtml(room?.name || '?') + (t.archivedAt ? ' (archived)' : ''),
+        action: "openRentHistory('" + t.id + "')"
+      });
+    }
+  });
+
+  // Search expenses
+  expenses.forEach(e => {
+    if (e.description?.toLowerCase().includes(q) || e.category?.toLowerCase().includes(q)) {
+      matches.push({
+        type: 'Expense',
+        icon: '🧾',
+        title: escapeHtml(e.description || ''),
+        sub: escapeHtml(e.category || '') + ' · ' + fmt(e.amount),
+        action: "switchTab('finance');switchFinanceSub('expenses')"
+      });
+    }
+  });
+
+  // Search maintenance
+  STATE.maintenance.forEach(m => {
+    if (m.title?.toLowerCase().includes(q) || m.note?.toLowerCase().includes(q)) {
+      const room = getRoomById(m.roomId);
+      matches.push({
+        type: 'Maintenance',
+        icon: '🔧',
+        title: escapeHtml(m.title || ''),
+        sub: 'Room ' + escapeHtml(room?.name || '?') + ' · ' + (m.status || 'open'),
+        action: "switchTab('utilities');switchUtilitiesSub('maintenance')"
+      });
+    }
+  });
+
+  if (matches.length === 0) {
+    results.innerHTML = '<div style="padding:16px;text-align:center;font-size:0.78rem;color:var(--muted)">No results for "' + escapeHtml(query) + '"</div>';
+  } else {
+    results.innerHTML = matches.slice(0, 8).map(m =>
+      '<div onclick="' + m.action + ';document.getElementById(\'search-results\').style.display=\'none\';document.getElementById(\'universal-search\').value=\'\';" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:0.5px solid var(--border);transition:background 0.1s" onmouseover="this.style.background=\'var(--surface2)\'" onmouseout="this.style.background=\'transparent\'">' +
+      '<span style="font-size:16px">' + m.icon + '</span>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:0.82rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + m.title + '</div>' +
+      '<div style="font-size:0.7rem;color:var(--text2)">' + m.sub + '</div></div>' +
+      '<span style="font-size:0.65rem;color:var(--muted);white-space:nowrap">' + m.type + '</span></div>'
+    ).join('');
+  }
+  results.style.display = 'block';
+}
+
+// ─── UNDO TOAST ───────────────────────────────────────────────────────────────
+
+let _undoAction = null;
+let _undoTimer = null;
+
+function showUndoToast(message, undoCallback) {
+  // Clear any existing undo toast
+  document.querySelectorAll('.undo-toast').forEach(el => el.remove());
+  if (_undoTimer) clearTimeout(_undoTimer);
+
+  const el = document.createElement('div');
+  el.className = 'undo-toast';
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);max-width:90vw;font-family:-apple-system,system-ui,sans-serif';
+  el.innerHTML = '<div style="flex:1"><div style="font-size:0.82rem;font-weight:500;color:var(--text)">' + message + '</div></div>' +
+    '<button onclick="executeUndo()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:-apple-system,system-ui,sans-serif">Undo</button>' +
+    '<button onclick="dismissUndo()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:0 4px">×</button>';
+  document.body.appendChild(el);
+
+  _undoAction = undoCallback;
+  _undoTimer = setTimeout(() => {
+    el.remove();
+    _undoAction = null;
+  }, 6000);
+}
+
+function executeUndo() {
+  if (_undoAction) {
+    _undoAction();
+    _undoAction = null;
+  }
+  if (_undoTimer) clearTimeout(_undoTimer);
+  document.querySelectorAll('.undo-toast').forEach(el => el.remove());
+  showToast('✓ Action undone', 'success');
+}
+
+function dismissUndo() {
+  if (_undoTimer) clearTimeout(_undoTimer);
+  document.querySelectorAll('.undo-toast').forEach(el => el.remove());
+  _undoAction = null;
+}
+
+// ─── INCOME TREND CHART (Home dashboard) ──────────────────────────────────────
+
+function renderIncomeChart() {
+  const wrap = document.getElementById('income-chart-wrap');
+  if (!wrap) return;
+  if (tenants.filter(t => !t.archivedAt).length === 0) { wrap.innerHTML = ''; return; }
+
+  const now = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = monthKey(d.getFullYear(), d.getMonth());
+    const label = d.toLocaleDateString('en-IN', { month: 'short' });
+    let income = 0;
+    tenants.forEach(t => {
+      const rec = getRentRecord(t, key);
+      if (rec && rec.paid) income += Number(rec.amount || t.rent || 0);
+    });
+    months.push({ key, label, income });
+  }
+
+  const maxIncome = Math.max(...months.map(m => m.income), 1);
+  const chartH = 100;
+  const chartW = 300;
+  const padL = 40;
+  const padR = 10;
+  const usableW = chartW - padL - padR;
+  const gap = usableW / (months.length - 1);
+
+  const points = months.map((m, i) => ({
+    x: padL + i * gap,
+    y: chartH - 10 - (m.income / maxIncome) * (chartH - 30),
+    ...m
+  }));
+
+  const linePath = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+  const areaPath = linePath + ' L' + points[points.length-1].x + ',' + (chartH - 10) + ' L' + points[0].x + ',' + (chartH - 10) + ' Z';
+
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(pct => {
+    const y = chartH - 10 - pct * (chartH - 30);
+    const val = Math.round(pct * maxIncome);
+    const display = val >= 1000 ? Math.round(val/1000) + 'K' : val;
+    return '<line x1="' + padL + '" y1="' + y + '" x2="' + (chartW - padR) + '" y2="' + y + '" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2 2"/>' +
+           '<text x="' + (padL - 4) + '" y="' + (y + 3) + '" font-size="9" fill="var(--muted)" text-anchor="end">' + display + '</text>';
+  }).join('');
+
+  const dots = points.map(p =>
+    '<circle cx="' + p.x + '" cy="' + p.y + '" r="3" fill="var(--green)"/>'
+  ).join('');
+
+  const labels = points.map(p =>
+    '<text x="' + p.x + '" y="' + (chartH + 4) + '" font-size="9" fill="var(--muted)" text-anchor="middle">' + p.label + '</text>'
+  ).join('');
+
+  wrap.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+    '<span style="font-size:0.78rem;font-weight:600;color:var(--text)">Monthly income</span>' +
+    '<span style="font-size:0.68rem;color:var(--muted)">Last 6 months</span></div>' +
+    '<svg viewBox="0 0 ' + chartW + ' ' + (chartH + 10) + '" style="width:100%;height:auto">' +
+    '<defs><linearGradient id="incGrad" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0%" stop-color="var(--green)" stop-opacity="0.2"/>' +
+    '<stop offset="100%" stop-color="var(--green)" stop-opacity="0"/></linearGradient></defs>' +
+    gridLines +
+    '<path d="' + areaPath + '" fill="url(#incGrad)"/>' +
+    '<path d="' + linePath + '" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    dots + labels + '</svg></div>';
+}
+
+// ─── TAB NOTIFICATION BADGES ──────────────────────────────────────────────────
+
+function updateTabBadges() {
+  // Remove existing badges
+  document.querySelectorAll('.tab-badge, .tab-badge-dot').forEach(b => b.remove());
+
+  const nowKey = monthKey(new Date().getFullYear(), new Date().getMonth());
+  const overdueCount = tenants.filter(t => !t.archivedAt && rentStatus(t, nowKey) === 'overdue').length;
+
+  // Finance badge — overdue count
+  if (overdueCount > 0) {
+    const finBtns = document.querySelectorAll('.bottom-nav-btn');
+    const finTab = finBtns[2]; // Finance is 3rd button
+    if (finTab) {
+      const icon = finTab.querySelector('.nav-icon');
+      if (icon && !icon.querySelector('.tab-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        badge.textContent = overdueCount;
+        icon.appendChild(badge);
+      }
+    }
+    // Desktop tabs
+    const deskTabs = document.querySelectorAll('.tabs .tab');
+    const deskFin = deskTabs[2];
+    if (deskFin && !deskFin.querySelector('.tab-badge')) {
+      deskFin.style.position = 'relative';
+      const badge = document.createElement('span');
+      badge.className = 'tab-badge';
+      badge.textContent = overdueCount;
+      deskFin.appendChild(badge);
+    }
+  }
+
+  // Utilities badge — stale meter readings (dot)
+  const now = new Date();
+  const staleMeters = FLOORS.flatMap(f => f.rooms).filter(r => {
+    const hist = (meterReadings[r.id] || []).filter(h => h && h.date);
+    if (hist.length === 0) return true;
+    const last = new Date(hist[hist.length-1].date);
+    return (now - last) > 30 * 24 * 60 * 60 * 1000;
+  });
+
+  if (staleMeters.length > 0) {
+    const utilBtns = document.querySelectorAll('.bottom-nav-btn');
+    const utilTab = utilBtns[3]; // Utilities is 4th button
+    if (utilTab) {
+      const icon = utilTab.querySelector('.nav-icon');
+      if (icon && !icon.querySelector('.tab-badge-dot')) {
+        const dot = document.createElement('span');
+        dot.className = 'tab-badge-dot';
+        icon.appendChild(dot);
+      }
+    }
+    const deskTabs = document.querySelectorAll('.tabs .tab');
+    const deskUtil = deskTabs[3];
+    if (deskUtil && !deskUtil.querySelector('.tab-badge-dot')) {
+      deskUtil.style.position = 'relative';
+      const dot = document.createElement('span');
+      dot.className = 'tab-badge-dot';
+      deskUtil.appendChild(dot);
+    }
+  }
 }
 
 // ─── Sub-tab switching ────────────────────────────────────────────────────────
@@ -2632,8 +3039,8 @@ function switchFinanceSub(sub) {
   if (tabs[idx]) tabs[idx].classList.add('active');
   // Render the relevant section
   if (sub === 'rent') renderFinance();
-  if (sub === 'expenses') renderExpensesTab();
-  if (sub === 'pnl') renderPnL();
+  if (sub === 'expenses') { renderExpensesTab(); renderExpenseChart(); }
+  if (sub === 'pnl') { renderPnL(); renderIncomeChart(); }
 }
 
 function switchUtilitiesSub(sub) {
@@ -6177,6 +6584,7 @@ window.openRentHistory = function(tenantId) {
 // ─── BOOT: check banner after init ────────────────────────────────────────────
 window.addEventListener('pgReady', () => {
   setTimeout(checkDueBanner, 1500);
+  setTimeout(updateTabBadges, 2000);
 });
 
 </script>
