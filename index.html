@@ -1767,7 +1767,7 @@
     </button>
     <button onclick="doLogout()" title="Sign Out" class="signout-btn">⏻ Sign Out</button>
   </div>
-  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v18.0</div>
+  <div style="position:absolute;bottom:2px;right:8px;font-size:0.5rem;color:var(--muted);opacity:0.5">v20.0</div>
 </header>
 
 <div class="tabs">
@@ -2487,6 +2487,15 @@
         <label class="form-label" style="color:var(--accent)">Rent Change Note <span style="color:var(--muted);font-size:0.65rem">(rent has changed)</span></label>
         <input class="form-input" id="f-rent-note" placeholder="e.g. Annual revision" type="text">
       </div>
+      <div id="f-solo-row" style="display:none" class="form-group">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+          <input type="checkbox" id="f-solo" style="width:18px;height:18px;accent-color:var(--accent)">
+          <div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text)">Full room (single occupancy)</div>
+            <div style="font-size:0.7rem;color:var(--text2)">Blocks additional tenants — this person gets the entire room</div>
+          </div>
+        </label>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Parent / Guardian Name</label>
@@ -3106,7 +3115,8 @@ function renderOverview() {
 
       // ── Ground Floor Card (regular room + Motor/Gas buttons) ──────────────
       if (floor.isGroundFloor) {
-        const isFull = ts.length >= room.capacity;
+        const hasSoloGF = ts.some(t => t.singleOccupancy);
+        const isFull = hasSoloGF || ts.length >= room.capacity;
         const isEmpty = ts.length === 0;
         const statusClass = isFull ? 'occupied' : (isEmpty ? 'vacant' : 'partial');
         card.className = `room-card ${statusClass}`;
@@ -3123,7 +3133,7 @@ function renderOverview() {
             <span class="rent-status ${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'paid':'due';})()}">${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'Paid':s==='overdue'?'⚠':'Due';})()}</span>
           </div>`).join('');
 
-        const gfAddBtn = ts.length < room.capacity
+        const gfAddBtn = !hasSoloGF && ts.length < room.capacity
           ? `<button class="add-tenant-btn" onclick="event.stopPropagation();openAddTenantModal('${room.id}', ${floor.id})">＋ Add Tenant</button>`
           : '';
 
@@ -3149,7 +3159,8 @@ function renderOverview() {
       }
 
       // ── Regular Room Card ──────────────────────────────────────────────────
-      const isFull = ts.length >= room.capacity;
+      const hasSolo = ts.some(t => t.singleOccupancy);
+      const isFull = hasSolo || ts.length >= room.capacity;
       const isEmpty = ts.length === 0;
       const statusClass = isFull ? 'occupied' : (isEmpty ? 'vacant' : 'partial');
       card.className = `room-card ${statusClass}`;
@@ -3164,7 +3175,7 @@ function renderOverview() {
           <span class="rent-status ${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'paid':'due';})()}">${(()=>{const s=rentStatus(t,monthKey(new Date().getFullYear(),new Date().getMonth()));return s==='paid'?'Paid':s==='overdue'?'⚠':'Due';})()}</span>
         </div>`).join('');
 
-      const addBtn = ts.length < room.capacity
+      const addBtn = !hasSolo && ts.length < room.capacity
         ? `<button class="add-tenant-btn" onclick="openAddTenantModal('${room.id}', ${floor.id})">＋ Add Tenant</button>`
         : '';
 
@@ -3186,8 +3197,8 @@ function renderOverview() {
           </div>
         </div>
         <div class="room-meta">
-          <span>${ts.length}/${room.capacity} occupied</span>
-          <span>${room.capacity - ts.length} bed${(room.capacity - ts.length)!==1?'s':''} free</span>
+          <span>${ts.length}/${room.capacity} occupied${hasSolo ? ' (single)' : ''}</span>
+          <span>${hasSolo ? 'Full room' : (room.capacity - ts.length) + ' bed' + ((room.capacity - ts.length)!==1?'s':'') + ' free'}</span>
           <span style="color:var(--accent)">₹${room.defaultRent}/head</span>
         </div>
         <div class="tenants-list">
@@ -3692,19 +3703,35 @@ function autoFillRent() {
 
 function updateRoomOptions(selectedRoomId) {
   const floorSelect = document.getElementById('f-floor');
-  // parseInt can return 0 for Ground Floor — do NOT use || fallback here
   const floorId = floorSelect.value !== '' ? parseInt(floorSelect.value) : 1;
   const floor = FLOORS.find(f => f.id === floorId) || FLOORS[1];
   const select = document.getElementById('f-room');
   select.innerHTML = floor.rooms.map(r => {
     const ts = tenantsInRoom(r.id);
-    const full = editingId ? (ts.filter(t=>t.id!==editingId).length >= r.capacity) : (ts.length >= r.capacity);
+    const hasSolo = ts.some(t => t.singleOccupancy);
+    const full = hasSolo || (editingId ? (ts.filter(t=>t.id!==editingId).length >= r.capacity) : (ts.length >= r.capacity));
     const features = [r.washroom==='attached'?'Attached WR':'Common WR', r.balcony?'Balcony':''].filter(Boolean).join(', ');
-    const label = `Room ${r.name} (${features}) — ₹${r.defaultRent}/head — ${full ? 'Full' : ts.length+'/'+r.capacity}`;
+    const statusText = hasSolo ? 'Full (single)' : (full ? 'Full' : ts.length+'/'+r.capacity);
+    const label = `Room ${r.name} (${features}) — ₹${r.defaultRent}/head — ${statusText}`;
     return `<option value="${r.id}" ${full && r.id !== selectedRoomId ? 'disabled' : ''} ${r.id === selectedRoomId ? 'selected' : ''}>${label}</option>`;
   }).join('');
   autoFillRent();
+  // Show single occupancy option if room capacity > 1
+  const selectedRoom = floor.rooms.find(r => r.id === select.value);
+  const soloRow = document.getElementById('f-solo-row');
+  if (soloRow) soloRow.style.display = (selectedRoom && selectedRoom.capacity > 1) ? '' : 'none';
 }
+
+// Update solo row when room changes
+document.addEventListener('change', e => {
+  if (e.target.id === 'f-room') {
+    const floorId = parseInt(document.getElementById('f-floor').value) || 1;
+    const floor = FLOORS.find(f => f.id === floorId) || FLOORS[1];
+    const room = floor.rooms.find(r => r.id === e.target.value);
+    const soloRow = document.getElementById('f-solo-row');
+    if (soloRow) soloRow.style.display = (room && room.capacity > 1) ? '' : 'none';
+  }
+});
 
 function openAddTenantModal(preRoomId, preFloorId) {
   editingId = null;
@@ -3722,6 +3749,8 @@ function openAddTenantModal(preRoomId, preFloorId) {
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
   document.getElementById('f-deposit').value = '';
   document.getElementById('f-deposit-mode').value = 'UPI';
+  const soloCheckbox = document.getElementById('f-solo');
+  if (soloCheckbox) soloCheckbox.checked = false;
   document.getElementById('f-rent-note').value = '';
   document.getElementById('f-rent-change-row').style.display = 'none';
   resetIdUpload(null);
@@ -3752,6 +3781,8 @@ function openEditModal(id) {
   document.getElementById('f-date').value = t.joinDate || '';
   document.getElementById('f-deposit').value = t.deposit || '';
   document.getElementById('f-deposit-mode').value = t.depositMode || 'UPI';
+  const soloCheckbox = document.getElementById('f-solo');
+  if (soloCheckbox) soloCheckbox.checked = !!t.singleOccupancy;
   document.getElementById('f-rent-note').value = '';
   document.getElementById('f-rent-change-row').style.display = 'none';
   window._editingOrigRent = t.rent;
@@ -3783,6 +3814,7 @@ async function saveTenant() {
   const deposit     = parseFloat(document.getElementById('f-deposit').value) || 0;
   const depositMode = document.getElementById('f-deposit-mode').value;
   const rentNote    = document.getElementById('f-rent-note')?.value.trim() || '';
+  const singleOccupancy = document.getElementById('f-solo')?.checked || false;
 
   if (!name)              { alert('Please enter tenant name.'); return; }
   if (!rent || isNaN(rent)) { alert('Please enter a valid rent amount.'); return; }
@@ -3791,6 +3823,8 @@ async function saveTenant() {
   const room = getRoomById(roomId);
   {
     const existing = tenantsInRoom(roomId).filter(t => t.id !== editingId);
+    const hasSolo = existing.some(t => t.singleOccupancy);
+    if (hasSolo) { alert('This room is occupied by a single-occupancy tenant.'); return; }
     if (existing.length >= room.capacity) { alert('This room is already full.'); return; }
   }
 
@@ -3862,13 +3896,14 @@ async function saveTenant() {
     const finalIdDoc = idDocRecord !== undefined ? idDocRecord : t.idDoc;
     const finalPhoto = photoRecord  !== undefined ? photoRecord  : t.photo;
     const finalConsent = _consentReceivedAt !== null ? _consentReceivedAt : (t.consentReceivedAt || null);
-    Object.assign(t, { name, rent, phone, parentName, parentPhone, joinDate, roomId, deposit, depositMode, idDoc: finalIdDoc, photo: finalPhoto, consentReceivedAt: finalConsent });
+    Object.assign(t, { name, rent, phone, parentName, parentPhone, joinDate, roomId, deposit, depositMode, singleOccupancy, idDoc: finalIdDoc, photo: finalPhoto, consentReceivedAt: finalConsent });
   } else {
     const finalIdDoc = idDocRecord !== undefined ? idDocRecord : null;
     const finalPhoto = photoRecord  !== undefined ? photoRecord  : null;
     STATE.tenants.push({
       id: Date.now().toString(), name, rent, phone, parentName, parentPhone,
       joinDate, roomId, paid: false, idDoc: finalIdDoc, deposit, depositMode,
+      singleOccupancy,
       rentChanges: [],
       photo: finalPhoto,
       consentReceivedAt: _consentReceivedAt || null
