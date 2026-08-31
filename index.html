@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="application-name" content="PGHub">
+<meta name="application-name" content="payg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PGHub">
+<meta name="apple-mobile-web-app-title" content="payg">
 <meta name="theme-color" content="#16181f">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
@@ -19,7 +19,7 @@
   }
 </style>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PG Manager</title>
+<title>payg</title>
 <!-- Firebase Compat SDK — regular scripts, no ES module issues -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -46,7 +46,7 @@
   // ── Expose DB helpers to global scope ──────────────────────────────────────
   window._fbSet = (path, data) => {
     return db.ref(path).set(data).catch(err => {
-      console.error('[PGHub] Firebase write failed:', path, err);
+      console.error('[payg] Firebase write failed:', path, err);
       if (typeof showToast === 'function') showToast('⚠ Save failed: ' + (err.message || 'network error'), 'error');
     });
   };
@@ -366,7 +366,7 @@
     font-size: 1.3rem;
     letter-spacing: -0.5px;
   }
-  .logo span { color: var(--accent); }
+  .logo span { color: var(--text); font-weight: 500; letter-spacing: -0.5px; }
 
   .header-stats {
     display: flex;
@@ -914,7 +914,7 @@
     border-bottom: 1px solid var(--border);
   }
   .logo { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; }
-  .logo span { color: var(--accent); }
+  .logo span { color: var(--text); font-weight: 500; letter-spacing: -0.5px; }
   .header-stats { gap: 28px; font-size: 0.78rem; color: var(--muted); }
   .header-stats .stat strong { font-size: 1rem; color: var(--text); font-weight: 600; }
 
@@ -1692,7 +1692,7 @@
 
 
 <div id="fb-loading" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;font-size:2rem;font-weight:700;color:#f2f2f7">PG<span style="color:#ffd60a">Hub</span></div>
+  <div style="display:flex;align-items:center;gap:10px"><svg width="36" height="36" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#0A84FF"/><path d="M11 24V14L18 8L25 14V24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="24" x2="25" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/><rect x="15" y="18" width="6" height="6" rx="1" fill="none" stroke="white" stroke-width="1.5"/></svg><span style="font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;font-size:1.8rem;font-weight:500;color:#f2f2f7;letter-spacing:-0.5px">payg</span></div>
   <div style="display:flex;gap:8px">
     <div style="width:8px;height:8px;border-radius:50%;background:#007aff;animation:dot 1.2s ease-in-out infinite"></div>
     <div style="width:8px;height:8px;border-radius:50%;background:#007aff;animation:dot 1.2s ease-in-out 0.2s infinite"></div>
@@ -1708,7 +1708,7 @@
 <div id="login-screen" style="display:none;position:fixed;inset:0;background:#0e0f13;z-index:9998;flex-direction:column;align-items:center;justify-content:center;padding:24px">
   <div style="width:100%;max-width:360px">
     <div style="text-align:center;margin-bottom:36px">
-      <div style="font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;font-size:2.2rem;font-weight:800;color:#e8eaf0;margin-bottom:8px">PG<span style="color:#ffd60a">Hub</span></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px"><svg width="40" height="40" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#0A84FF"/><path d="M11 24V14L18 8L25 14V24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="24" x2="25" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/><rect x="15" y="18" width="6" height="6" rx="1" fill="none" stroke="white" stroke-width="1.5"/></svg><span style="font-family:-apple-system,'SF Pro Display',system-ui,sans-serif;font-size:2rem;font-weight:500;color:#f2f2f7;letter-spacing:-0.5px">payg</span></div>
       <div style="font-family:-apple-system,system-ui,sans-serif;font-size:0.78rem;color:#5a5f72">Secure PG Management</div>
     </div>
 
@@ -1751,7 +1751,7 @@
 
 
 <header>
-  <div class="logo">PG<span>Hub</span></div>
+  <div class="logo" style="display:flex;align-items:center;gap:8px"><svg width="26" height="26" viewBox="0 0 36 36"><rect width="36" height="36" rx="9" fill="#0A84FF"/><path d="M11 24V14L18 8L25 14V24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="24" x2="25" y2="24" stroke="white" stroke-width="2" stroke-linecap="round"/><rect x="15" y="18" width="6" height="6" rx="1" fill="none" stroke="white" stroke-width="1.5"/></svg><span style="letter-spacing:-0.5px">payg</span></div>
   <div id="universal-search-wrap" style="position:relative;flex:1;max-width:280px;margin:0 12px">
     <input type="text" id="universal-search" placeholder="Search tenants, expenses..." oninput="handleUniversalSearch(this.value)" onfocus="document.getElementById('search-results').style.display='block'" style="width:100%;padding:7px 12px 7px 32px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.78rem;font-family:-apple-system,system-ui,sans-serif;outline:none" onfocusin="this.style.borderColor='var(--accent)'" onfocusout="this.style.borderColor='var(--border)';setTimeout(()=>document.getElementById('search-results').style.display='none',200)">
     <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none">⌕</span>
@@ -2738,7 +2738,7 @@ function switchTab(name) {
   });
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const secEl = document.getElementById('sec-' + actualTab);
-  if (!secEl) { console.error('[PGHub] section not found: sec-' + actualTab); return; }
+  if (!secEl) { console.error('[payg] section not found: sec-' + actualTab); return; }
   secEl.classList.add('active');
 
   // Render content
@@ -3097,7 +3097,7 @@ function selectFloor(floorId, btnEl) {
 function renderOverview() {
   try {
   const container = document.getElementById('floors-container');
-  if (!container) { console.error('[PGHub] floors-container not found!'); return; }
+  if (!container) { console.error('[payg] floors-container not found!'); return; }
   container.innerHTML = '';
   // debug removed
 
@@ -3230,7 +3230,7 @@ function renderOverview() {
 
   updateHeaderStats();
   renderDashboard();
-  } catch(err) { console.error('[PGHub] renderOverview CRASHED:', err); }
+  } catch(err) { console.error('[payg] renderOverview CRASHED:', err); }
 }
 
 function updateHeaderStats() {
@@ -4700,7 +4700,7 @@ Invalid responses: "1398 kWh" or "The reading is 1398" or "I can see..."`;
     }
 
   } catch(err) {
-    console.error('[PGHub] Gemini OCR error:', err);
+    console.error('[payg] Gemini OCR error:', err);
     setOcrStatus('⚠ Error');
     setOcrBanner('error', '⚠ ' + err.message + ' — enter the reading manually.');
   }
@@ -4808,7 +4808,7 @@ async function showMeterImage(roomId, idx) {
         imgSrc = photo.data || photo;
       }
     } catch(e) {
-      console.error('[PGHub] Failed to load meter photo:', e);
+      console.error('[payg] Failed to load meter photo:', e);
     }
   }
 
@@ -5377,7 +5377,7 @@ async function doLogoutSilent() {
 window.addEventListener('pgReady', () => resetIdleTimer());
 
 async function doLogout() {
-  if (!confirm('Sign out of PGHub?\n\nThis will clear cached settings and your Gemini key from this device.')) return;
+  if (!confirm('Sign out of payg?\n\nThis will clear cached settings and your Gemini key from this device.')) return;
   window._appBooted = false;
   await window._fbSignOut();
   window._fbReady = false;
@@ -5394,7 +5394,7 @@ async function doLogout() {
     Object.keys(localStorage).forEach(k => {
       if (k.startsWith('banner_dismissed_')) localStorage.removeItem(k);
     });
-  } catch(e) { console.error('[PGHub] Error clearing localStorage:', e); }
+  } catch(e) { console.error('[payg] Error clearing localStorage:', e); }
   window._currentUid = null;
   document.getElementById('login-screen').style.display = 'flex';
   showToast('✓ Signed out — cached data cleared', 'success');
@@ -5943,7 +5943,7 @@ function showReceiptModal(tenantId, key) {
   if (!rec) return;
   const s = getSettings();
   const [y, m] = key.split('-').map(Number);
-  const pgName = s.pgName || 'PGHub';
+  const pgName = s.pgName || 'payg';
   const receiptNo = `RCT-${key}-${tenantId.slice(-4)}`;
   const room = getRoomById(t.roomId);
 
@@ -5984,7 +5984,7 @@ function sendReceiptWhatsApp() {
   if (!rec) return;
   const s = getSettings();
   const [y, m] = _receiptKey.split('-').map(Number);
-  const pgName = s.pgName || 'PGHub';
+  const pgName = s.pgName || 'payg';
   const msg = encodeURIComponent(
     `🧾 *Rent Receipt*\n*${pgName}*\n\nTenant: ${t.name}\nMonth: ${monthLabel(y, m-1)}\nAmount: ₹${Number(rec.amount).toLocaleString('en-IN')}\nMode: ${rec.mode}\nDate: ${rec.date}\n\nThank you! 🙏`
   );
@@ -6256,7 +6256,7 @@ function exportAllExcel() {
 
   // Generate and download
   const s = getSettings();
-  const pgName = (s.pgName || 'PGHub').replace(/[^a-zA-Z0-9]/g, '_');
+  const pgName = (s.pgName || 'payg').replace(/[^a-zA-Z0-9]/g, '_');
   const dateStr = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `${pgName}_Report_${dateStr}.xlsx`);
   showToast('✓ Excel exported with 5 sheets', 'success');
